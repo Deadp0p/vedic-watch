@@ -1,3 +1,5 @@
+import bellSoundUrl from '../assets/bell.mp3'
+
 export const voiceModes = [
   { id: 'silent', hi: 'मौन', en: 'Silent' },
   { id: 'all', hi: 'हर मुहूर्त', en: 'Every muhurat' },
@@ -7,6 +9,9 @@ export const voiceModes = [
 const announcementStorageKey = 'vedic_last_muhurat_announcement'
 let audioContext = null
 let bellTimer = null
+let bellFadeTimer = null
+let bellResolveTimer = null
+let bellAudio = null
 
 const englishNames = {
   रुद्र: 'Rudra',
@@ -124,8 +129,107 @@ function createAudioContext() {
   return audioContext
 }
 
-function playSoftBell(onAudioBlocked) {
+function clearBellTimers() {
   window.clearTimeout(bellTimer)
+  window.clearTimeout(bellFadeTimer)
+  window.clearTimeout(bellResolveTimer)
+  bellTimer = null
+  bellFadeTimer = null
+  bellResolveTimer = null
+}
+
+function getBellAudio() {
+  if (!bellAudio) {
+    bellAudio = new Audio(bellSoundUrl)
+    bellAudio.preload = 'auto'
+  }
+
+  return bellAudio
+}
+
+function stopMp3Bell() {
+  if (!bellAudio) return
+
+  bellAudio.pause()
+  bellAudio.currentTime = 0
+  bellAudio.volume = 0.35
+  bellAudio.onended = null
+  bellAudio.onerror = null
+}
+
+function fadeOutBell(audio, finish) {
+  const startVolume = audio.volume || 0.35
+  const fadeStartedAt = Date.now()
+  const fadeDurationMs = 450
+
+  const tick = () => {
+    const progress = Math.min((Date.now() - fadeStartedAt) / fadeDurationMs, 1)
+    audio.volume = Math.max(startVolume * (1 - progress), 0)
+
+    if (progress >= 1) {
+      finish()
+      return
+    }
+
+    bellFadeTimer = window.setTimeout(tick, 60)
+  }
+
+  tick()
+}
+
+function playMp3Bell() {
+  return new Promise((resolve, reject) => {
+    const audio = getBellAudio()
+    let settled = false
+
+    const finish = () => {
+      if (settled) return
+      settled = true
+      clearBellTimers()
+      stopMp3Bell()
+      resolve()
+    }
+
+    const fail = (error) => {
+      if (settled) return
+      settled = true
+      clearBellTimers()
+      stopMp3Bell()
+      reject(error)
+    }
+
+    clearBellTimers()
+    stopMp3Bell()
+    audio.volume = 0.35
+    audio.currentTime = 0
+    audio.onended = finish
+    audio.onerror = fail
+
+    const playAttempt = audio.play()
+
+    if (!playAttempt?.then) {
+      bellResolveTimer = window.setTimeout(finish, 2100)
+      return
+    }
+
+    playAttempt
+      .then(() => {
+        const durationSeconds = Number.isFinite(audio.duration) ? audio.duration : 0
+
+        if (!durationSeconds || durationSeconds > 2) {
+          bellTimer = window.setTimeout(() => fadeOutBell(audio, finish), 1500)
+          bellResolveTimer = window.setTimeout(finish, 2200)
+          return
+        }
+
+        bellResolveTimer = window.setTimeout(finish, durationSeconds * 1000 + 150)
+      })
+      .catch(fail)
+  })
+}
+
+function playSyntheticBell(onAudioBlocked) {
+  clearBellTimers()
 
   return new Promise((resolve) => {
     try {
@@ -178,6 +282,14 @@ function playSoftBell(onAudioBlocked) {
       resolve()
     }
   })
+}
+
+async function playSoftBell(onAudioBlocked) {
+  try {
+    await playMp3Bell()
+  } catch {
+    await playSyntheticBell(onAudioBlocked)
+  }
 }
 
 function buildAnnouncement({ language, muhurat, panchang, now, vedicDayStart, countdownMs }) {
