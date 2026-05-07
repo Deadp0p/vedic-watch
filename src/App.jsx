@@ -116,7 +116,6 @@ function App() {
   const [panchangDate, setPanchangDate] = useState(() => getCorrectedNow(0))
   const [location, setLocation] = useState(getInitialLocation)
   const [solarTimes, setSolarTimes] = useState(() => getCachedSolarTimes(getCorrectedNow(0), getInitialLocation()))
-  const [muhuratMode, setMuhuratMode] = useState('standard')
   const [language, setLanguage] = useState('hi')
   const [voiceMode, setVoiceMode] = useState('silent')
   const [locationStatus, setLocationStatus] = useState({ state: 'idle', message: '' })
@@ -255,8 +254,8 @@ function App() {
     [panchangDate, location, solarTimes],
   )
   const muhurat = useMemo(
-    () => calculateMuhurat(now, location, panchang.sunrise, panchang.sunset, muhuratMode),
-    [now, location, panchang.sunrise, panchang.sunset, muhuratMode],
+    () => calculateMuhurat(now, location, panchang.sunrise, panchang.sunset),
+    [now, location, panchang.sunrise, panchang.sunset],
   )
   const dayPart = getDayPart(now, panchang.sunrise, panchang.sunset)
 
@@ -344,8 +343,6 @@ function App() {
       location={location}
       panchang={panchang}
       muhurat={muhurat}
-      muhuratMode={muhuratMode}
-      setMuhuratMode={setMuhuratMode}
       accuracyInfo={accuracyInfo}
       language={language}
       setLanguage={setLanguage}

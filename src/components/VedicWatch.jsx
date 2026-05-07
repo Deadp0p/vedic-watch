@@ -84,8 +84,6 @@ export default function VedicWatch({
   location,
   panchang,
   muhurat,
-  muhuratMode,
-  setMuhuratMode,
   accuracyInfo,
   language,
   setLanguage,
@@ -111,7 +109,6 @@ export default function VedicWatch({
   const factIndex = getFactIndexForStep(dayOfYear, matchingFactIndexes, factRotationStep)
   const activeFact = sanatanFacts[factIndex] || sanatanFacts[0]
   const fact = activeFact[language === 'hi' ? 'hi' : 'en']
-  const [isFullscreen, setIsFullscreen] = useState(() => Boolean(document.fullscreenElement))
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -127,37 +124,11 @@ export default function VedicWatch({
     return () => window.clearInterval(timer)
   }, [dayOfYear, factSelectionKey, matchingFactIndexes])
 
-  useEffect(() => {
-    function handleFullscreenChange() {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [])
-
-  async function handleToggleFullscreen() {
-    if (!document.fullscreenEnabled) return
-
-    if (document.fullscreenElement) {
-      await document.exitFullscreen().catch(() => {})
-      return
-    }
-
-    await document.documentElement.requestFullscreen().catch(() => {})
-  }
-
   return (
     <main className="relative h-[100svh] w-screen overflow-hidden bg-black text-ivory">
       <AnimatedBackground />
 
       <div className="top-controls">
-        <button type="button" className="watch-button fullscreen-button" onClick={handleToggleFullscreen}>
-          {isFullscreen
-            ? t(language, '\u092a\u0942\u0930\u094d\u0923 \u0938\u094d\u0915\u094d\u0930\u0940\u0928 \u0938\u0947 \u092c\u093e\u0939\u0930', 'Exit Fullscreen')
-            : t(language, '\u092a\u0942\u0930\u094d\u0923 \u0938\u094d\u0915\u094d\u0930\u0940\u0928', 'Fullscreen')}
-        </button>
-        <MuhuratModeControl mode={muhuratMode} onChange={setMuhuratMode} language={language} />
         <button type="button" className="watch-button" onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}>
           {language === 'hi' ? 'हिं' : 'EN'}
         </button>
@@ -187,7 +158,7 @@ export default function VedicWatch({
             <DataRow label={t(language, 'चंद्र राशि', 'Moon Sign')} value={panchang.moonSign} />
             <DataRow label={t(language, 'सूर्य राशि', 'Sun Sign')} value={panchang.sunSign} />
           </SidePanel>
-          <VedicTimeInfo language={language} mode={muhuratMode} />
+          <VedicTimeInfo language={language} />
         </div>
 
         <div className="relative mx-auto grid w-full place-items-center">
@@ -199,7 +170,8 @@ export default function VedicWatch({
         </div>
 
         <div className="grid gap-4 max-lg:hidden">
-          <SidePanel title={t(language, 'आज के समय', 'Today Timings')} delay={2.6}>
+          <SidePanel title={t(language, 'वैदिक मुहूर्त (30 प्रणाली)', 'Vedic Muhurat (30 System)')} delay={2.6}>
+            <MethodNote language={language} />
             <DataRow
               label={t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
               value={muhurat.current.name}
@@ -207,41 +179,20 @@ export default function VedicWatch({
               shubh={muhurat.badgeType === 'good'}
               language={language}
             />
-            <DataRow label={t(language, 'सूर्योदय', 'Sunrise')} value={formatShortTime(panchang.sunrise)} />
-            <DataRow label={t(language, 'सूर्यास्त', 'Sunset')} value={formatShortTime(panchang.sunset)} />
+            <DataRow label={t(language, 'अगला मुहूर्त', 'Next Muhurat')} value={muhurat.next.name} />
+          </SidePanel>
+          <SidePanel title={t(language, 'पारंपरिक मुहूर्त', 'Traditional Muhurat')} delay={3.2}>
+            <MethodNote language={language} />
+            <DataRow label={t(language, 'ब्रह्म मुहूर्त', 'Brahma Muhurat')} value={muhurat.brahma} tone="good" />
+            <DataRow label={t(language, 'अभिजित', 'Abhijit')} value={muhurat.abhijit} tone="good" />
             <DataRow label={t(language, 'राहु काल', 'Rahu Kaal')} value={muhurat.rahuKaal} tone="bad" />
             <DataRow label={t(language, 'गुलिक', 'Gulika')} value={muhurat.gulikaKaal} />
             <DataRow label={t(language, 'यमगण्ड', 'Yamaganda')} value={muhurat.yamaganda} tone="bad" />
-            <DataRow label={t(language, 'ब्रह्म मुहूर्त', 'Brahma Muhurat')} value={muhurat.brahma} tone="good" />
-            <DataRow label={t(language, 'अभिजित', 'Abhijit')} value={muhurat.abhijit} tone="good" />
           </SidePanel>
         </div>
       </section>
       <AccuracyFooter language={language} location={location} accuracyInfo={accuracyInfo} />
     </main>
-  )
-}
-
-function MuhuratModeControl({ mode, onChange, language }) {
-  const isDynamic = mode === 'dynamic'
-  const title =
-    language === 'hi'
-      ? '\u092a\u0930\u0902\u092a\u0930\u093e\u0917\u0924 \u092a\u0926\u094d\u0927\u0924\u093f\u092f\u093e\u0902 \u092d\u093f\u0928\u094d\u0928 \u0939\u094b \u0938\u0915\u0924\u0940 \u0939\u0948\u0902\u0964'
-      : 'Traditional methods may vary.'
-
-  return (
-    <button
-      type="button"
-      className="watch-button"
-      title={title}
-      onClick={() => onChange(isDynamic ? 'standard' : 'dynamic')}
-    >
-      <span>
-        {isDynamic
-          ? t(language, '\u0917\u0924\u093f\u0936\u0940\u0932 \u092e\u0941\u0939\u0942\u0930\u094d\u0924', 'Dynamic Muhurta')
-          : t(language, '30 \u092e\u0941\u0939\u0942\u0930\u094d\u0924', '30 Muhurta')}
-      </span>
-    </button>
   )
 }
 
@@ -251,6 +202,18 @@ function SyncingPill({ language }) {
       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00d4ff] shadow-[0_0_8px_rgba(0,212,255,0.75)]" />
       {t(language, 'पंचांग सिंक हो रहा है', 'Syncing Panchang')}
     </div>
+  )
+}
+
+function MethodNote({ language }) {
+  return (
+    <p className="mb-1 font-serifHindi text-[11px] leading-snug text-[#FFF4D6]/62">
+      {t(
+        language,
+        'वैदिक मुहूर्त 48 मिनट के स्थिर विभाजन पर आधारित है, जबकि पारंपरिक मुहूर्त सूर्योदय और सूर्यास्त के अनुसार बदलते हैं।',
+        'Vedic Muhurat uses fixed 48-minute divisions. Traditional Muhurat varies based on sunrise and sunset.',
+      )}
+    </p>
   )
 }
 
@@ -486,7 +449,7 @@ function SidePanel({ title, children, className = '', delay = 0 }) {
   )
 }
 
-function VedicTimeInfo({ language, mode }) {
+function VedicTimeInfo({ language }) {
   return (
     <section className="bronze-glass premium-card lift-card relative z-30 rounded-lg p-4 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
       <h2 className="mb-2 font-serifHindi text-[clamp(15px,1.25vw,18px)] font-black text-softgold">
@@ -498,19 +461,6 @@ function VedicTimeInfo({ language, mode }) {
           'वैदिक वॉच 30 मुहूर्तों वाले दिन पर आधारित है। हर मुहूर्त 48 मिनट का होता है और गणना सूर्योदय से 0:00 पर शुरू होती है।',
           'Vedic Watch works on a 30-hour day (Muhurtas), where each ‘hour’ equals 48 minutes, starting from 0:00 at sunrise.',
         )}
-      </p>
-      <p className="mt-2 font-serifHindi text-[12px] leading-snug text-[#FFF4D6]/75">
-        {mode === 'dynamic'
-          ? t(
-              language,
-              '\u0917\u0924\u093f\u0936\u0940\u0932 \u092e\u094b\u0921: \u0926\u093f\u0928/\u0930\u093e\u0924 \u0915\u0947 15-15 \u092e\u0941\u0939\u0942\u0930\u094d\u0924\u0964 \u092a\u0930\u0902\u092a\u0930\u093e\u0917\u0924 \u092a\u0926\u094d\u0927\u0924\u093f\u092f\u093e\u0902 \u092d\u093f\u0928\u094d\u0928 \u0939\u094b \u0938\u0915\u0924\u0940 \u0939\u0948\u0902\u0964',
-              'Dynamic mode: 15 day and 15 night Muhurtas. Traditional methods may vary.',
-            )
-          : t(
-              language,
-              '\u092e\u093e\u0928\u0915 \u092e\u094b\u0921: \u0938\u0942\u0930\u094d\u092f\u094b\u0926\u092f \u0938\u0947 48 \u092e\u093f\u0928\u091f \u0915\u093e \u092e\u0941\u0939\u0942\u0930\u094d\u0924\u0964 \u092a\u0930\u0902\u092a\u0930\u093e\u0917\u0924 \u092a\u0926\u094d\u0927\u0924\u093f\u092f\u093e\u0902 \u092d\u093f\u0928\u094d\u0928 \u0939\u094b \u0938\u0915\u0924\u0940 \u0939\u0948\u0902\u0964',
-              'Standard mode: each Muhurta is 48 minutes from sunrise. Traditional methods may vary.',
-            )}
       </p>
     </section>
   )
