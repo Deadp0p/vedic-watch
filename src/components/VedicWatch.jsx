@@ -148,7 +148,7 @@ export default function VedicWatch({
       ) : null}
 
       <section className="watch-grid relative z-10 mx-auto grid h-full w-full max-w-[1500px] items-center gap-[clamp(24px,2vw,30px)] px-[clamp(10px,1.6vw,28px)] pt-11 pb-10 max-lg:grid-cols-1 max-lg:grid-rows-[minmax(0,1fr)_auto] max-lg:gap-3 max-lg:pt-14">
-        <div className="watch-column watch-column-left grid gap-2.5 max-lg:hidden">
+        <div className="watch-column watch-column-left grid gap-3.5 max-lg:hidden">
           <FactBox language={language} fact={fact} category={activeFact.category} />
           <SidePanel title={t(language, 'पंचांग विवरण', 'Panchang Details')} delay={0}>
             {panchangSyncing ? <SyncingPill language={language} /> : null}
@@ -158,7 +158,7 @@ export default function VedicWatch({
             <DataRow label={t(language, 'चंद्र राशि', 'Moon Sign')} value={panchang.moonSign} />
             <DataRow label={t(language, 'सूर्य राशि', 'Sun Sign')} value={panchang.sunSign} />
           </SidePanel>
-          <VedicTimeInfo language={language} />
+          <VedicTimeInfo language={language} muhurat={muhurat} />
         </div>
 
         <div className="watch-center relative mx-auto grid w-full place-items-center px-4">
@@ -171,7 +171,7 @@ export default function VedicWatch({
 
         <div className="watch-column watch-column-right grid gap-2.5 max-lg:hidden">
           <SidePanel title={t(language, 'वैदिक मुहूर्त (30 प्रणाली)', 'Vedic Muhurat (30 System)')} delay={2.6}>
-            <MethodNote language={language} />
+            <MethodNote language={language} type="vedic" />
             <DataRow
               label={t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
               value={muhurat.current.name}
@@ -182,7 +182,7 @@ export default function VedicWatch({
             <DataRow label={t(language, 'अगला मुहूर्त', 'Next Muhurat')} value={muhurat.next.name} />
           </SidePanel>
           <SidePanel title={t(language, 'पारंपरिक मुहूर्त', 'Traditional Muhurat')} delay={3.2}>
-            <MethodNote language={language} />
+            <MethodNote language={language} type="traditional" />
             <DataRow label={t(language, 'ब्रह्म मुहूर्त', 'Brahma Muhurat')} value={muhurat.brahma} tone="good" />
             <DataRow label={t(language, 'अभिजित', 'Abhijit')} value={muhurat.abhijit} tone="good" />
             <DataRow label={t(language, 'राहु काल', 'Rahu Kaal')} value={muhurat.rahuKaal} tone="bad" />
@@ -205,14 +205,23 @@ function SyncingPill({ language }) {
   )
 }
 
-function MethodNote({ language }) {
+function MethodNote({ language, type = 'vedic' }) {
+  const copy =
+    type === 'traditional'
+      ? t(
+          language,
+          'यह मुहूर्त सूर्योदय और सूर्यास्त के अनुसार बदलते हैं।',
+          'These Muhurats change according to sunrise and sunset.',
+        )
+      : t(
+          language,
+          'यह 48 मिनट के स्थिर मुहूर्त पर आधारित प्रणाली है।',
+          'This system is based on fixed 48-minute Muhurats.',
+        )
+
   return (
     <p className="mb-1 font-serifHindi text-[11px] leading-snug text-[#FFF4D6]/62">
-      {t(
-        language,
-        'वैदिक मुहूर्त 48 मिनट के स्थिर विभाजन पर आधारित है, जबकि पारंपरिक मुहूर्त सूर्योदय और सूर्यास्त के अनुसार बदलते हैं।',
-        'Vedic Muhurat uses fixed 48-minute divisions. Traditional Muhurat varies based on sunrise and sunset.',
-      )}
+      {copy}
     </p>
   )
 }
@@ -231,17 +240,18 @@ function AccuracyFooter({ language, location, accuracyInfo }) {
 
   return (
     <footer className="accuracy-footer">
-      {t(
-        language,
-        `गणना ${location.nameHi} के सूर्योदय/सूर्यास्त पर आधारित है।`,
-        `Calculations are based on sunrise/sunset for ${location.nameEn}.`,
-      )}
+      <div>
+        {t(
+          language,
+          `गणना ${location.nameHi} के सूर्योदय/सूर्यास्त पर आधारित है।`,
+          `Calculations are based on sunrise/sunset for ${location.nameEn}.`,
+        )}
+      </div>
       {accuracyInfo ? (
-        <>
-          {' '}
+        <div>
           {t(language, '\u0938\u0942\u0930\u094d\u092f\u094b\u0926\u092f', 'Sunrise')}: {formatShortTime(accuracyInfo.sunrise)} ·{' '}
           {t(language, '\u0938\u0942\u0930\u094d\u092f\u093e\u0938\u094d\u0924', 'Sunset')}: {formatShortTime(accuracyInfo.sunset)} · {details}
-        </>
+        </div>
       ) : null}
     </footer>
   )
@@ -270,7 +280,7 @@ function WatchFace({ now, panchang, muhurat, language, weekday }) {
 
       <div className="pointer-events-none absolute inset-[13%] z-20 rounded-full bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.35)_0%,rgba(0,0,0,0.15)_60%,transparent_100%)]" />
 
-      <div className="bronze-glass premium-card centered-premium-card absolute left-1/2 top-[6.2%] z-40 flex w-[min(46%,300px)] -translate-x-1/2 flex-col items-center rounded-md px-3 py-2 text-center shadow-[0_12px_34px_rgba(0,0,0,0.42)] [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
+      <div className="bronze-glass premium-card centered-premium-card absolute left-1/2 top-[6.2%] z-40 flex w-[min(46%,300px)] -translate-x-1/2 flex-col items-center rounded-md px-3 py-1.5 text-center shadow-[0_12px_34px_rgba(0,0,0,0.42)] [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
         <div className="font-digital text-[clamp(19px,3.1vw,32px)] font-black leading-none text-ivory drop-shadow-[0_0_7px_rgba(212,175,55,0.18)]">
           {formatClock(now)}
         </div>
@@ -280,15 +290,15 @@ function WatchFace({ now, panchang, muhurat, language, weekday }) {
         <div className="mt-1 max-w-full truncate text-[clamp(8px,0.95vw,11px)] leading-snug text-antiquegold">{weekday}</div>
       </div>
 
-      <div className="absolute left-1/2 top-[28.5%] z-40 grid w-[min(50%,360px)] -translate-x-1/2 place-items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
+      <div className="absolute left-1/2 top-[30%] z-40 grid w-[min(50%,360px)] -translate-x-1/2 place-items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
         <CleanMoon phase={panchang.moonPhase} illumination={panchang.moonIllumination} />
       </div>
 
-      <div className="absolute left-1/2 top-[49.6%] z-50 flex w-[min(62%,390px)] -translate-x-1/2 flex-col items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
+      <div className="absolute left-1/2 top-[52%] z-50 flex w-[min(62%,390px)] -translate-x-1/2 flex-col items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
         <div className="min-h-[1.2em] max-w-full overflow-visible whitespace-nowrap font-serifHindi text-[clamp(24px,3.8vw,40px)] font-black leading-[1.18] text-softgold drop-shadow-[0_0_7px_rgba(212,175,55,0.28)]">
           {panchang.tithi}
         </div>
-        <div className="mt-2 max-w-full truncate font-serifHindi text-[clamp(12px,1.55vw,17px)] font-semibold leading-snug text-ivory/88">
+        <div className="mt-3 max-w-full truncate font-serifHindi text-[clamp(12px,1.55vw,17px)] font-semibold leading-snug text-ivory/88">
           {panchang.paksha}
         </div>
       </div>
@@ -350,7 +360,7 @@ function MechanicalClockLayers({ parallax }) {
 function MuhuratCard({ muhurat, language }) {
   return (
     <motion.div
-      className="bronze-glass premium-card centered-premium-card absolute bottom-[5.2%] left-1/2 z-40 w-[min(64%,410px)] -translate-x-1/2 rounded-md px-4 py-3 text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]"
+      className="muhurat-center-card bronze-glass premium-card centered-premium-card absolute bottom-[5.2%] left-1/2 z-40 w-[min(64%,410px)] -translate-x-1/2 rounded-md px-4 py-2.5 text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]"
       initial={{ opacity: 0, y: 8 }}
       animate={{
         opacity: 1,
@@ -372,7 +382,7 @@ function MuhuratCard({ muhurat, language }) {
         {muhurat.countdownMs >= 0 ? formatCountdownLocal(muhurat.countdownMs) : '00:00'}
       </motion.div>
       <div className="mt-1 truncate text-[clamp(8px,0.9vw,10px)] text-ivory/68">
-        {t(language, 'अगला मुहूर्त', 'Next Muhurat')} {muhurat.next.name}
+        {t(language, 'अगला मुहूर्त', 'Next Muhurat')}
       </div>
     </motion.div>
   )
@@ -449,17 +459,41 @@ function SidePanel({ title, children, className = '', delay = 0 }) {
   )
 }
 
-function VedicTimeInfo({ language }) {
+function formatVedicOrdinal(number, language) {
+  if (language === 'hi') return `${number}वाँ मुहूर्त`
+  const suffix = number % 10 === 1 && number !== 11 ? 'st' : number % 10 === 2 && number !== 12 ? 'nd' : number % 10 === 3 && number !== 13 ? 'rd' : 'th'
+  return `${number}${suffix} Muhurat`
+}
+
+function getVedicTimeParts(muhurat) {
+  if (!muhurat?.vedicDayStart || !muhurat?.current?.start) return { number: 1, minutes: 0 }
+  const segmentMs = 48 * 60000
+  const elapsed = Math.max(0, muhurat.current.start.getTime() - muhurat.vedicDayStart.getTime())
+  const number = (Math.floor(elapsed / segmentMs) % 30) + 1
+  const elapsedInCurrent = segmentMs - Math.max(0, muhurat.countdownMs || 0)
+  const minutes = Math.max(0, Math.floor(elapsedInCurrent / 60000))
+  return { number, minutes: Math.min(47, minutes) }
+}
+
+function VedicTimeInfo({ language, muhurat }) {
+  const vedicTime = getVedicTimeParts(muhurat)
+
   return (
     <section className="vedic-time-info bronze-glass premium-card lift-card relative z-30 rounded-lg p-2.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
       <h2 className="mb-1.5 font-serifHindi text-[clamp(13px,1.08vw,16px)] font-black text-softgold">
         {t(language, 'वैदिक समय', 'Vedic Time')}
       </h2>
+      <div className="mb-1 grid gap-0.5 font-serifHindi">
+        <div className="text-[13px] font-black text-[#FFF4D6]">{formatVedicOrdinal(vedicTime.number, language)}</div>
+        <div className="text-[11px] text-antiquegold">
+          {language === 'hi' ? `${vedicTime.minutes} मिनट` : `${vedicTime.minutes} minutes`}
+        </div>
+      </div>
       <p className="font-serifHindi text-[11.5px] leading-snug text-[#FFF4D6]">
         {t(
           language,
-          'वैदिक वॉच 30 मुहूर्तों वाले दिन पर आधारित है। हर मुहूर्त 48 मिनट का होता है और गणना सूर्योदय से 0:00 पर शुरू होती है।',
-          'Vedic Watch works on a 30-hour day (Muhurtas), where each ‘hour’ equals 48 minutes, starting from 0:00 at sunrise.',
+          'यह 48 मिनट के स्थिर मुहूर्त पर आधारित प्रणाली है।',
+          'This system is based on fixed 48-minute Muhurats.',
         )}
       </p>
     </section>

@@ -230,6 +230,14 @@ select option {
   backdrop-filter: blur(14px);
 }
 
+.muhurat-center-card {
+  background: rgba(35, 24, 10, 0.38);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.15),
+    0 0 58px rgba(212, 175, 55, 0.06);
+  backdrop-filter: blur(11px);
+}
+
 .fact-card {
   border: 1px solid rgba(212, 175, 55, 0.3);
   background: rgba(30, 20, 10, 0.35);
@@ -337,14 +345,18 @@ select option {
   border: 1px solid rgba(212, 175, 55, 0.18);
   border-radius: 999px;
   background: rgba(18, 11, 4, 0.48);
-  padding: 4px 10px;
+  padding: 5px 12px;
   color: rgba(255, 244, 214, 0.62);
   font-family: var(--font-serifHindi);
   font-size: 10px;
-  line-height: 1.15;
+  line-height: 1.25;
   text-align: center;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(12px);
+}
+
+.accuracy-footer > div + div {
+  margin-top: 2px;
 }
 
 .clock-layer-shell {

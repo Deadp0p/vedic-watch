@@ -53,7 +53,16 @@ function addMinutes(date, minutes) {
 function formatRange(start, end) {
   if (!start || !end) return '\u2014'
   const formatter = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
-  return `${formatter.format(start)} - ${formatter.format(end)}`
+  const formatTime = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null
+    const parts = formatter.formatToParts(date)
+    const hour = parts.find((part) => part.type === 'hour')?.value
+    const minute = parts.find((part) => part.type === 'minute')?.value
+    return hour && minute ? `${hour}:${minute}` : null
+  }
+  const startText = formatTime(start)
+  const endText = formatTime(end)
+  return startText && endText ? `${startText} - ${endText}` : '\u2014'
 }
 
 function daySegment(sunrise, sunset, weekday, kind) {
