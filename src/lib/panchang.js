@@ -130,9 +130,9 @@ function getLunarMonth(date) {
   }
 }
 
-export function calculatePanchang(date, location) {
+export function calculatePanchang(date, location, solarTimesOverride = null) {
   try {
-    const solarTimes = SunCalc.getTimes(date, location.latitude, location.longitude)
+    const solarTimes = solarTimesOverride || SunCalc.getTimes(date, location.latitude, location.longitude)
     const moonIllumination = SunCalc.getMoonIllumination(date)
     const moonPhaseAngle = Astronomy.MoonPhase(date)
     const sunLongitude = sidereal(Astronomy.SunPosition(date).elon, date)

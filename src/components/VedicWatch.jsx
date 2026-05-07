@@ -84,6 +84,9 @@ export default function VedicWatch({
   location,
   panchang,
   muhurat,
+  muhuratMode,
+  setMuhuratMode,
+  accuracyInfo,
   language,
   setLanguage,
   voiceMode,
@@ -154,6 +157,7 @@ export default function VedicWatch({
             ? t(language, '\u092a\u0942\u0930\u094d\u0923 \u0938\u094d\u0915\u094d\u0930\u0940\u0928 \u0938\u0947 \u092c\u093e\u0939\u0930', 'Exit Fullscreen')
             : t(language, '\u092a\u0942\u0930\u094d\u0923 \u0938\u094d\u0915\u094d\u0930\u0940\u0928', 'Fullscreen')}
         </button>
+        <MuhuratModeControl mode={muhuratMode} onChange={setMuhuratMode} language={language} />
         <button type="button" className="watch-button" onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}>
           {language === 'hi' ? 'हिं' : 'EN'}
         </button>
@@ -183,7 +187,7 @@ export default function VedicWatch({
             <DataRow label={t(language, 'चंद्र राशि', 'Moon Sign')} value={panchang.moonSign} />
             <DataRow label={t(language, 'सूर्य राशि', 'Sun Sign')} value={panchang.sunSign} />
           </SidePanel>
-          <VedicTimeInfo language={language} />
+          <VedicTimeInfo language={language} mode={muhuratMode} />
         </div>
 
         <div className="relative mx-auto grid w-full place-items-center">
@@ -213,8 +217,31 @@ export default function VedicWatch({
           </SidePanel>
         </div>
       </section>
-      <AccuracyFooter language={language} location={location} />
+      <AccuracyFooter language={language} location={location} accuracyInfo={accuracyInfo} />
     </main>
+  )
+}
+
+function MuhuratModeControl({ mode, onChange, language }) {
+  const isDynamic = mode === 'dynamic'
+  const title =
+    language === 'hi'
+      ? '\u092a\u0930\u0902\u092a\u0930\u093e\u0917\u0924 \u092a\u0926\u094d\u0927\u0924\u093f\u092f\u093e\u0902 \u092d\u093f\u0928\u094d\u0928 \u0939\u094b \u0938\u0915\u0924\u0940 \u0939\u0948\u0902\u0964'
+      : 'Traditional methods may vary.'
+
+  return (
+    <button
+      type="button"
+      className="watch-button"
+      title={title}
+      onClick={() => onChange(isDynamic ? 'standard' : 'dynamic')}
+    >
+      <span>
+        {isDynamic
+          ? t(language, '\u0917\u0924\u093f\u0936\u0940\u0932 \u092e\u0941\u0939\u0942\u0930\u094d\u0924', 'Dynamic Muhurta')
+          : t(language, '30 \u092e\u0941\u0939\u0942\u0930\u094d\u0924', '30 Muhurta')}
+      </span>
+    </button>
   )
 }
 
@@ -227,7 +254,18 @@ function SyncingPill({ language }) {
   )
 }
 
-function AccuracyFooter({ language, location }) {
+function AccuracyFooter({ language, location, accuracyInfo }) {
+  const details = accuracyInfo
+    ? [
+        `${t(language, '\u0938\u092e\u092f', 'Time')}: ${accuracyInfo.timeSource}`,
+        `${t(language, '\u0905\u0902\u0924\u0930', 'Offset')}: ${accuracyInfo.timeOffsetSeconds}s`,
+        `${t(language, '\u0938\u0942\u0930\u094d\u092f', 'Sun')}: ${accuracyInfo.sunriseSource}`,
+        `${t(language, '\u0938\u094d\u0925\u093e\u0928', 'Location')}: ${accuracyInfo.locationMode}`,
+        `${Number(accuracyInfo.latitude).toFixed(4)}, ${Number(accuracyInfo.longitude).toFixed(4)}`,
+        `${t(language, '\u0938\u093f\u0902\u0915', 'Sync')}: ${formatShortTime(accuracyInfo.lastSyncedAt)}`,
+      ].join(' · ')
+    : ''
+
   return (
     <footer className="accuracy-footer">
       {t(
@@ -235,6 +273,13 @@ function AccuracyFooter({ language, location }) {
         `गणना ${location.nameHi} के सूर्योदय/सूर्यास्त पर आधारित है।`,
         `Calculations are based on sunrise/sunset for ${location.nameEn}.`,
       )}
+      {accuracyInfo ? (
+        <>
+          {' '}
+          {t(language, '\u0938\u0942\u0930\u094d\u092f\u094b\u0926\u092f', 'Sunrise')}: {formatShortTime(accuracyInfo.sunrise)} ·{' '}
+          {t(language, '\u0938\u0942\u0930\u094d\u092f\u093e\u0938\u094d\u0924', 'Sunset')}: {formatShortTime(accuracyInfo.sunset)} · {details}
+        </>
+      ) : null}
     </footer>
   )
 }
@@ -441,7 +486,7 @@ function SidePanel({ title, children, className = '', delay = 0 }) {
   )
 }
 
-function VedicTimeInfo({ language }) {
+function VedicTimeInfo({ language, mode }) {
   return (
     <section className="bronze-glass premium-card lift-card relative z-30 rounded-lg p-4 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
       <h2 className="mb-2 font-serifHindi text-[clamp(15px,1.25vw,18px)] font-black text-softgold">
@@ -453,6 +498,19 @@ function VedicTimeInfo({ language }) {
           'वैदिक वॉच 30 मुहूर्तों वाले दिन पर आधारित है। हर मुहूर्त 48 मिनट का होता है और गणना सूर्योदय से 0:00 पर शुरू होती है।',
           'Vedic Watch works on a 30-hour day (Muhurtas), where each ‘hour’ equals 48 minutes, starting from 0:00 at sunrise.',
         )}
+      </p>
+      <p className="mt-2 font-serifHindi text-[12px] leading-snug text-[#FFF4D6]/75">
+        {mode === 'dynamic'
+          ? t(
+              language,
+              '\u0917\u0924\u093f\u0936\u0940\u0932 \u092e\u094b\u0921: \u0926\u093f\u0928/\u0930\u093e\u0924 \u0915\u0947 15-15 \u092e\u0941\u0939\u0942\u0930\u094d\u0924\u0964 \u092a\u0930\u0902\u092a\u0930\u093e\u0917\u0924 \u092a\u0926\u094d\u0927\u0924\u093f\u092f\u093e\u0902 \u092d\u093f\u0928\u094d\u0928 \u0939\u094b \u0938\u0915\u0924\u0940 \u0939\u0948\u0902\u0964',
+              'Dynamic mode: 15 day and 15 night Muhurtas. Traditional methods may vary.',
+            )
+          : t(
+              language,
+              '\u092e\u093e\u0928\u0915 \u092e\u094b\u0921: \u0938\u0942\u0930\u094d\u092f\u094b\u0926\u092f \u0938\u0947 48 \u092e\u093f\u0928\u091f \u0915\u093e \u092e\u0941\u0939\u0942\u0930\u094d\u0924\u0964 \u092a\u0930\u0902\u092a\u0930\u093e\u0917\u0924 \u092a\u0926\u094d\u0927\u0924\u093f\u092f\u093e\u0902 \u092d\u093f\u0928\u094d\u0928 \u0939\u094b \u0938\u0915\u0924\u0940 \u0939\u0948\u0902\u0964',
+              'Standard mode: each Muhurta is 48 minutes from sunrise. Traditional methods may vary.',
+            )}
       </p>
     </section>
   )

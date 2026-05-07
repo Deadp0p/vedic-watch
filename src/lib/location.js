@@ -1,18 +1,21 @@
 export const defaultCity = {
-  nameHi: 'भोपाल',
-  nameEn: 'Bhopal',
-  latitude: 23.2599,
-  longitude: 77.4126,
+  nameHi: '\u091c\u092f\u092a\u0941\u0930',
+  nameEn: 'Jaipur',
+  city: 'Jaipur',
+  state: 'Rajasthan',
+  country: 'India',
+  latitude: 26.9124,
+  longitude: 75.7873,
+  mode: 'Default',
 }
 
 export const cityOptions = [
   defaultCity,
-  { nameHi: 'वाराणसी', nameEn: 'Varanasi', latitude: 25.3176, longitude: 82.9739 },
-  { nameHi: 'उज्जैन', nameEn: 'Ujjain', latitude: 23.1765, longitude: 75.7885 },
-  { nameHi: 'दिल्ली', nameEn: 'Delhi', latitude: 28.6139, longitude: 77.209 },
-  { nameHi: 'मुंबई', nameEn: 'Mumbai', latitude: 19.076, longitude: 72.8777 },
-  { nameHi: 'जयपुर', nameEn: 'Jaipur', latitude: 26.9124, longitude: 75.7873 },
-  { nameHi: 'चेन्नई', nameEn: 'Chennai', latitude: 13.0827, longitude: 80.2707 },
+  { nameHi: '\u0935\u093e\u0930\u093e\u0923\u0938\u0940', nameEn: 'Varanasi', city: 'Varanasi', latitude: 25.3176, longitude: 82.9739 },
+  { nameHi: '\u0909\u091c\u094d\u091c\u0948\u0928', nameEn: 'Ujjain', city: 'Ujjain', latitude: 23.1765, longitude: 75.7885 },
+  { nameHi: '\u0926\u093f\u0932\u094d\u0932\u0940', nameEn: 'Delhi', city: 'Delhi', latitude: 28.6139, longitude: 77.209 },
+  { nameHi: '\u092e\u0941\u0902\u092c\u0908', nameEn: 'Mumbai', city: 'Mumbai', latitude: 19.076, longitude: 72.8777 },
+  { nameHi: '\u091a\u0947\u0928\u094d\u0928\u0908', nameEn: 'Chennai', city: 'Chennai', latitude: 13.0827, longitude: 80.2707 },
 ]
 
 async function reverseGeocode(latitude, longitude) {
@@ -31,29 +34,33 @@ async function reverseGeocode(latitude, longitude) {
 export function detectLocation() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
-      resolve({ ...defaultCity, source: 'default', reason: 'unsupported' })
+      resolve({ ...defaultCity, source: 'default', mode: 'Default', reason: 'unsupported' })
       return
     }
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords
+        const { latitude, longitude, accuracy } = position.coords
         const detectedName = await reverseGeocode(latitude, longitude)
         resolve({
           nameHi: detectedName || 'Detected Location',
           nameEn: detectedName || 'Detected Location',
+          city: detectedName || 'Detected Location',
           latitude,
           longitude,
+          accuracy,
           source: 'gps',
+          mode: 'GPS',
         })
       },
       (error) =>
         resolve({
           ...defaultCity,
           source: 'default',
+          mode: 'Default',
           reason: error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable',
         }),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 600000 },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 },
     )
   })
 }

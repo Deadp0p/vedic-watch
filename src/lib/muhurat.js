@@ -1,39 +1,39 @@
 import SunCalc from 'suncalc'
 
 const dayMuhuratNames = [
-  'रुद्र',
-  'आहि',
-  'मित्र',
-  'पितृ',
-  'वसु',
-  'वाराह',
-  'विश्वदेव',
-  'विधि',
-  'सतमुखी',
-  'पुरुहूत',
-  'वाहिनी',
-  'नक्तनकर',
-  'वरुण',
-  'अर्यमा',
-  'भग',
+  '\u0930\u0941\u0926\u094d\u0930',
+  '\u0906\u0939\u093f',
+  '\u092e\u093f\u0924\u094d\u0930',
+  '\u092a\u093f\u0924\u0943',
+  '\u0935\u0938\u0941',
+  '\u0935\u093e\u0930\u093e\u0939',
+  '\u0935\u093f\u0936\u094d\u0935\u0926\u0947\u0935',
+  '\u0935\u093f\u0927\u093f',
+  '\u0938\u0924\u092e\u0941\u0916\u0940',
+  '\u092a\u0941\u0930\u0941\u0939\u0942\u0924',
+  '\u0935\u093e\u0939\u093f\u0928\u0940',
+  '\u0928\u0915\u094d\u0924\u0928\u0915\u0930',
+  '\u0935\u0930\u0941\u0923',
+  '\u0905\u0930\u094d\u092f\u092e\u093e',
+  '\u092d\u0917',
 ]
 
 const nightMuhuratNames = [
-  'गिरीश',
-  'अजपाद',
-  'अहिरबुध्न्य',
-  'पूषा',
-  'अश्विनी',
-  'यम',
-  'अग्नि',
-  'विधाता',
-  'कण्ड',
-  'अदिति',
-  'जीव',
-  'विष्णु',
-  'द्युमद्गद्युति',
-  'ब्रह्म',
-  'समुद्रम',
+  '\u0917\u093f\u0930\u0940\u0936',
+  '\u0905\u091c\u092a\u093e\u0926',
+  '\u0905\u0939\u093f\u0930\u092c\u0941\u0927\u094d\u0928\u094d\u092f',
+  '\u092a\u0942\u0937\u093e',
+  '\u0905\u0936\u094d\u0935\u093f\u0928\u0940',
+  '\u092f\u092e',
+  '\u0905\u0917\u094d\u0928\u093f',
+  '\u0935\u093f\u0927\u093e\u0924\u093e',
+  '\u0915\u0923\u094d\u0921',
+  '\u0905\u0926\u093f\u0924\u093f',
+  '\u091c\u0940\u0935',
+  '\u0935\u093f\u0937\u094d\u0923\u0941',
+  '\u0926\u094d\u092f\u0941\u092e\u0926\u094d\u0917\u0926\u094d\u092f\u0941\u0924\u093f',
+  '\u092c\u094d\u0930\u0939\u094d\u092e',
+  '\u0938\u092e\u0941\u0926\u094d\u0930\u092e',
 ]
 
 const weekdayWindows = {
@@ -51,7 +51,7 @@ function addMinutes(date, minutes) {
 }
 
 function formatRange(start, end) {
-  if (!start || !end) return '—'
+  if (!start || !end) return '\u2014'
   const formatter = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
   return `${formatter.format(start)} - ${formatter.format(end)}`
 }
@@ -63,25 +63,44 @@ function daySegment(sunrise, sunset, weekday, kind) {
   return { start, end: new Date(start.getTime() + duration) }
 }
 
-export function calculateMuhurat(now, location, sunrise, sunset) {
-  if (!sunrise || !sunset) {
-    return {
-      current: interval(null, null, '—'),
-      next: interval(null, null, '—'),
-      countdownMs: 0,
-      rahuKaal: '—',
-      gulikaKaal: '—',
-      yamaganda: '—',
-      abhijit: '—',
-      brahma: '—',
-      badge: '—',
-      badgeType: 'neutral',
-    }
-  }
+function getSunriseForDate(date, location) {
+  return SunCalc.getTimes(date, location.latitude, location.longitude).sunrise
+}
 
+function getVedicDayStart(now, location, sunrise) {
+  if (sunrise && now >= sunrise) return sunrise
+
+  const previousDay = new Date(now)
+  previousDay.setDate(now.getDate() - 1)
+  return getSunriseForDate(previousDay, location)
+}
+
+function getStandardMuhurat(now, location, sunrise) {
+  const names = [...dayMuhuratNames, ...nightMuhuratNames]
+  const vedicDayStart = getVedicDayStart(now, location, sunrise)
+  const segment = 48 * 60000
+  const elapsed = Math.max(0, now.getTime() - vedicDayStart.getTime())
+  const absoluteIndex = Math.floor(elapsed / segment)
+  const index = absoluteIndex % 30
+  const currentStart = new Date(vedicDayStart.getTime() + absoluteIndex * segment)
+  const currentEnd = new Date(currentStart.getTime() + segment)
+  const nextIndex = (index + 1) % 30
+
+  return {
+    currentStart,
+    currentEnd,
+    currentName: names[index] || '\u2014',
+    nextStart: currentEnd,
+    nextEnd: new Date(currentEnd.getTime() + segment),
+    nextName: names[nextIndex] || '\u2014',
+    vedicDayStart,
+  }
+}
+
+function getDynamicMuhurat(now, location, sunrise, sunset) {
   const tomorrow = new Date(now)
   tomorrow.setDate(now.getDate() + 1)
-  const nextSunrise = SunCalc.getTimes(tomorrow, location.latitude, location.longitude).sunrise
+  const nextSunrise = getSunriseForDate(tomorrow, location)
   const nightEnd = nextSunrise || addMinutes(sunset, 720)
   const isDay = now >= sunrise && now < sunset
   const names = isDay ? dayMuhuratNames : nightMuhuratNames
@@ -92,11 +111,52 @@ export function calculateMuhurat(now, location, sunrise, sunset) {
   const currentStart = new Date(start.getTime() + segment * index)
   const currentEnd = new Date(currentStart.getTime() + segment)
   const nextIndex = (index + 1) % 15
-  const nextStart = currentEnd
-  const nextEnd = new Date(nextStart.getTime() + segment)
-  const auspiciousNames = new Set(['मित्र', 'वसु', 'विश्वदेव', 'विधि', 'भग', 'ब्रह्म', 'विष्णु', 'अश्विनी'])
-  const inauspiciousNames = new Set(['रुद्र', 'आहि', 'यम', 'अग्नि'])
-  const currentName = names[index] || '—'
+
+  return {
+    currentStart,
+    currentEnd,
+    currentName: names[index] || '\u2014',
+    nextStart: currentEnd,
+    nextEnd: new Date(currentEnd.getTime() + segment),
+    nextName: names[nextIndex] || '\u2014',
+    vedicDayStart: getVedicDayStart(now, location, sunrise),
+  }
+}
+
+export function calculateMuhurat(now, location, sunrise, sunset, mode = 'standard') {
+  if (!sunrise || !sunset) {
+    return {
+      current: interval(null, null, '\u2014'),
+      next: interval(null, null, '\u2014'),
+      countdownMs: 0,
+      rahuKaal: '\u2014',
+      gulikaKaal: '\u2014',
+      yamaganda: '\u2014',
+      abhijit: '\u2014',
+      brahma: '\u2014',
+      badge: '\u2014',
+      badgeType: 'neutral',
+      mode,
+      vedicDayStart: null,
+    }
+  }
+
+  const activeMuhurat =
+    mode === 'dynamic'
+      ? getDynamicMuhurat(now, location, sunrise, sunset)
+      : getStandardMuhurat(now, location, sunrise)
+  const auspiciousNames = new Set([
+    '\u092e\u093f\u0924\u094d\u0930',
+    '\u0935\u0938\u0941',
+    '\u0935\u093f\u0936\u094d\u0935\u0926\u0947\u0935',
+    '\u0935\u093f\u0927\u093f',
+    '\u092d\u0917',
+    '\u092c\u094d\u0930\u0939\u094d\u092e',
+    '\u0935\u093f\u0937\u094d\u0923\u0941',
+    '\u0905\u0936\u094d\u0935\u093f\u0928\u0940',
+  ])
+  const inauspiciousNames = new Set(['\u0930\u0941\u0926\u094d\u0930', '\u0906\u0939\u093f', '\u092f\u092e', '\u0905\u0917\u094d\u0928\u093f'])
+  const currentName = activeMuhurat.currentName
   const badgeType = auspiciousNames.has(currentName) ? 'good' : inauspiciousNames.has(currentName) ? 'bad' : 'neutral'
   const weekday = now.getDay()
   const rahu = daySegment(sunrise, sunset, weekday, 'rahu')
@@ -109,16 +169,17 @@ export function calculateMuhurat(now, location, sunrise, sunset) {
   const brahmaEnd = addMinutes(sunrise, -48)
 
   return {
-    current: interval(currentStart, currentEnd, currentName, badgeType),
-    next: interval(nextStart, nextEnd, names[nextIndex] || '—'),
-    countdownMs: currentEnd.getTime() - now.getTime(),
+    current: interval(activeMuhurat.currentStart, activeMuhurat.currentEnd, currentName, badgeType),
+    next: interval(activeMuhurat.nextStart, activeMuhurat.nextEnd, activeMuhurat.nextName),
+    countdownMs: activeMuhurat.currentEnd.getTime() - now.getTime(),
     rahuKaal: formatRange(rahu.start, rahu.end),
     gulikaKaal: formatRange(gulika.start, gulika.end),
     yamaganda: formatRange(yama.start, yama.end),
     abhijit: formatRange(abhijitStart, abhijitEnd),
     brahma: formatRange(brahmaStart, brahmaEnd),
-    badge: badgeType === 'good' ? 'शुभ' : badgeType === 'bad' ? 'अशुभ' : 'सामान्य',
+    badge: badgeType === 'good' ? '\u0936\u0941\u092d' : badgeType === 'bad' ? '\u0905\u0936\u0941\u092d' : '\u0938\u093e\u092e\u093e\u0928\u094d\u092f',
     badgeType,
+    mode,
+    vedicDayStart: activeMuhurat.vedicDayStart,
   }
 }
-
