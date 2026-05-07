@@ -391,7 +391,8 @@ select option {
   bottom: 7px;
   left: 50%;
   z-index: 30;
-  max-width: min(760px, calc(100vw - 32px));
+  width: max-content;
+  max-width: min(980px, calc(100vw - 32px));
   transform: translateX(-50%);
   border: 1px solid rgba(212, 175, 55, 0.18);
   border-radius: 999px;
@@ -400,7 +401,7 @@ select option {
   color: rgba(255, 244, 214, 0.62);
   font-family: var(--font-serifHindi);
   font-size: 10px;
-  line-height: 1.25;
+  line-height: 1.32;
   text-align: center;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(12px);

@@ -16,8 +16,8 @@ function t(language, hi, en) {
 
 const invalidMuhuratDisplayNames = new Set(['\u091c\u0940\u0935'])
 
-function displayMuhuratName(name) {
-  return name && name !== '—' && !invalidMuhuratDisplayNames.has(name) ? name : '—'
+function displayMuhuratName(name, fallback = '—') {
+  return name && name !== '—' && !invalidMuhuratDisplayNames.has(name) ? name : fallback
 }
 
 function getDayOfYear(date) {
@@ -185,7 +185,7 @@ export default function VedicWatch({
             <MethodNote language={language} type="vedic" />
             <DataRow
               label={t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
-              value={displayMuhuratName(muhurat.current.name)}
+              value={displayMuhuratName(muhurat.current.name, formatVedicTimeTitle(vedicTime.number, language))}
               tone={muhurat.badgeType === 'good' ? 'good' : 'neutral'}
               currentBadge
               highlight
@@ -256,7 +256,7 @@ function AccuracyFooter({ language, location, accuracyInfo }) {
           </div>
           <div>
             {t(language, '\u0938\u094d\u0925\u093e\u0928', 'Location')}: {language === 'hi' ? location.nameHi : location.nameEn} ·{' '}
-            {t(language, 'GPS', 'GPS')}: {accuracyInfo.locationMode} ·{' '}
+            {t(language, 'GPS', 'GPS')}: {Number(accuracyInfo.latitude).toFixed(4)}, {Number(accuracyInfo.longitude).toFixed(4)} ·{' '}
             {t(language, '\u0938\u093f\u0902\u0915', 'Sync')}: {formatShortTime(accuracyInfo.lastSyncedAt)}
           </div>
         </>
@@ -318,7 +318,7 @@ function WatchFace({ panchang, muhurat, language, vedicTime }) {
         </div>
       </div>
 
-      <MuhuratCard muhurat={muhurat} language={language} />
+      <MuhuratCard muhurat={muhurat} language={language} vedicTime={vedicTime} />
     </motion.section>
   )
 }
@@ -372,7 +372,7 @@ function MechanicalClockLayers({ parallax }) {
   )
 }
 
-function MuhuratCard({ muhurat, language }) {
+function MuhuratCard({ muhurat, language, vedicTime }) {
   return (
     <motion.div
       className="muhurat-center-card bronze-glass premium-card centered-premium-card absolute bottom-[4.8%] left-1/2 z-40 w-[min(62%,390px)] -translate-x-1/2 rounded-md px-4 py-2 text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]"
@@ -386,7 +386,9 @@ function MuhuratCard({ muhurat, language }) {
       <div className="text-[clamp(8px,0.92vw,10px)] uppercase tracking-[0.14em] text-[#FFF4D6] opacity-100 [text-shadow:0_0_10px_rgba(255,244,214,0.26),0_3px_10px_rgba(0,0,0,0.86)]">
         {t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
       </div>
-      <div className="mt-1 truncate font-serifHindi text-[clamp(14px,1.65vw,19px)] font-black text-softgold">{displayMuhuratName(muhurat.current.name)}</div>
+      <div className="mt-1 truncate font-serifHindi text-[clamp(14px,1.65vw,19px)] font-black text-softgold">
+        {displayMuhuratName(muhurat.current.name, formatVedicTimeTitle(vedicTime.number, language))}
+      </div>
       <motion.div
         className="mt-0.5 font-digital text-[clamp(25px,3.75vw,40px)] font-black leading-none text-ivory"
         animate={{
@@ -394,23 +396,13 @@ function MuhuratCard({ muhurat, language }) {
         }}
         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
       >
-        {muhurat.countdownMs >= 0 ? formatCountdownLocal(muhurat.countdownMs) : '00:00'}
+        {formatVedicClock(vedicTime, language)}
       </motion.div>
-      <div className="mt-0.5 truncate text-[clamp(8px,0.9vw,10px)] text-ivory/68">
-        {t(language, 'अगला मुहूर्त', 'Next Muhurat')}
+      <div className="mt-0.5 truncate font-serifHindi text-[clamp(8px,0.9vw,10px)] text-ivory/68">
+        {formatVedicTimeSummary(vedicTime, language)}
       </div>
     </motion.div>
   )
-}
-
-function formatCountdownLocal(ms) {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const s = total % 60
-  return h > 0
-    ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-    : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 function AnimatedBackground() {
@@ -489,6 +481,15 @@ function formatVedicMinutes(minutes, language) {
   return language === 'hi' ? `${minutes} मिनट` : `${minutes} min`
 }
 
+function formatVedicClock(vedicTime, language) {
+  const timeText = `${String(vedicTime.number).padStart(2, '0')}:${String(vedicTime.minutes).padStart(2, '0')}`
+  return language === 'hi' ? `${timeText} वैदिक समय` : `${timeText} Vedic Time`
+}
+
+function formatVedicTimeSummary(vedicTime, language) {
+  return `${formatVedicTimeTitle(vedicTime.number, language)} • ${formatVedicMinutes(vedicTime.minutes, language)}`
+}
+
 function getVedicTimeParts(now, muhurat) {
   if (!(now instanceof Date) || !muhurat?.vedicDayStart) return { number: 1, minutes: 0 }
   const segmentMs = 48 * 60000
@@ -504,14 +505,15 @@ function VedicTimeInfo({ language, vedicTime }) {
       <h2 className="mb-1.5 font-serifHindi text-[clamp(13px,1.08vw,16px)] font-black text-softgold">
         {t(language, 'वैदिक समय', 'Vedic Time')}
       </h2>
-      <div className="mb-1 grid gap-0.5 font-serifHindi">
-        <div className="text-[13px] font-black text-[#FFF4D6]">{formatVedicTimeTitle(vedicTime.number, language)}</div>
-        <div className="text-[11px] text-antiquegold">
-          {formatVedicMinutes(vedicTime.minutes, language)}
-        </div>
+      <div className="mb-1 font-serifHindi text-[12px] font-black text-[#FFF4D6]">
+        {t(language, 'अभी', 'Now')}: {formatVedicTimeSummary(vedicTime, language)}
       </div>
       <p className="font-serifHindi text-[11.5px] leading-snug text-[#FFF4D6]">
-        {t(language, '1 मुहूर्त = 48 मिनट', '1 Muhurta = 48 minutes')}
+        {t(
+          language,
+          'वैदिक वॉच 30 मुहूर्तों वाले दिन पर आधारित है। यह सूर्योदय से शुरू होता है, जहाँ 1 मुहूर्त = 48 मिनट होता है।',
+          'Vedic Watch follows a 30-Muhurta day starting from sunrise, where 1 Muhurta = 48 minutes.',
+        )}
       </p>
     </section>
   )
