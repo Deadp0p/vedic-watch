@@ -1,5 +1,5 @@
 ﻿import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import LocationSelector from './LocationSelector'
 import RotatingInfoPanel from './RotatingInfoPanel'
 import VoiceControls from './VoiceControls'
@@ -37,6 +37,20 @@ function isBrahmaMuhurat(now, sunrise) {
   const start = new Date(sunrise.getTime() - 96 * 60000)
   const end = new Date(sunrise.getTime() - 48 * 60000)
   return now >= start && now <= end
+}
+
+function isAbhijitMuhurat(now, sunrise, sunset) {
+  if (!(sunrise instanceof Date) || !(sunset instanceof Date)) return false
+  const solarNoon = new Date((sunrise.getTime() + sunset.getTime()) / 2)
+  const start = new Date(solarNoon.getTime() - 24 * 60000)
+  const end = new Date(solarNoon.getTime() + 24 * 60000)
+  return now >= start && now <= end
+}
+
+function getActiveShubhPeriodKey(now, panchang) {
+  if (isBrahmaMuhurat(now, panchang?.sunrise)) return 'brahma'
+  if (isAbhijitMuhurat(now, panchang?.sunrise, panchang?.sunset)) return 'abhijit'
+  return ''
 }
 
 function isMorningTime(now) {
@@ -97,6 +111,8 @@ export default function VedicWatch({
   onDetectLocation,
   locationStatus,
   panchangSyncing,
+  soundNotice,
+  shubhPulseActive,
 }) {
   const vedicTime = getVedicTimeParts(now, muhurat)
   const dayOfYear = getDayOfYear(now)
@@ -113,6 +129,9 @@ export default function VedicWatch({
   const factIndex = getFactIndexForStep(dayOfYear, matchingFactIndexes, factRotationStep)
   const activeFact = sanatanFacts[factIndex] || sanatanFacts[0]
   const fact = activeFact[language === 'hi' ? 'hi' : 'en']
+  const [periodPulseKey, setPeriodPulseKey] = useState('')
+  const lastPeriodPulseKeyRef = useRef('')
+  const activeShubhPeriodKey = getActiveShubhPeriodKey(now, panchang)
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -128,8 +147,19 @@ export default function VedicWatch({
     return () => window.clearInterval(timer)
   }, [dayOfYear, factSelectionKey, matchingFactIndexes])
 
+  useEffect(() => {
+    if (!activeShubhPeriodKey || lastPeriodPulseKeyRef.current === activeShubhPeriodKey) return
+
+    lastPeriodPulseKeyRef.current = activeShubhPeriodKey
+    setPeriodPulseKey(activeShubhPeriodKey)
+    const timer = window.setTimeout(() => setPeriodPulseKey(''), 10000)
+    return () => window.clearTimeout(timer)
+  }, [activeShubhPeriodKey])
+
+  const anyShubhPulseActive = shubhPulseActive || Boolean(periodPulseKey)
+
   return (
-    <main className="vedic-watch-shell relative h-[100vh] w-screen overflow-hidden bg-black text-ivory">
+    <main className={`vedic-watch-shell relative h-[100vh] w-screen overflow-hidden bg-black text-ivory ${anyShubhPulseActive ? 'shubh-pulse-active' : ''}`}>
       <AnimatedBackground />
 
       <div className="top-controls">
@@ -148,6 +178,11 @@ export default function VedicWatch({
       {locationStatus?.message ? (
         <div className="pointer-events-none absolute right-4 top-[58px] z-50 max-w-[min(320px,calc(100vw-2rem))] rounded-md border border-gold/30 bg-[rgba(18,11,4,0.72)] px-3 py-2 text-right font-serifHindi text-[12px] leading-snug text-[#FFF4D6] shadow-[0_0_24px_rgba(212,175,55,0.16)] backdrop-blur-[14px]">
           {locationStatus.message}
+        </div>
+      ) : null}
+      {soundNotice ? (
+        <div className="pointer-events-none absolute left-1/2 top-[58px] z-50 max-w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 rounded-full border border-gold/24 bg-[rgba(18,11,4,0.66)] px-3 py-1.5 text-center font-serifHindi text-[11px] text-[#FFF4D6]/82 shadow-[0_0_20px_rgba(212,175,55,0.14)] backdrop-blur-[12px]">
+          {soundNotice}
         </div>
       ) : null}
 
@@ -187,6 +222,7 @@ export default function VedicWatch({
               tone={muhurat.badgeType === 'good' ? 'good' : 'neutral'}
               currentBadge
               highlight
+              pulse={shubhPulseActive && muhurat.badgeType === 'good'}
               language={language}
             />
             <DataRow label={t(language, 'अगला मुहूर्त', 'Next Muhurat')} value={displayMuhuratName(muhurat.next.name)} />
@@ -198,8 +234,8 @@ export default function VedicWatch({
             delay={3.2}
           >
             <MethodNote language={language} type="traditional" />
-            <DataRow label={t(language, 'ब्रह्म मुहूर्त', 'Brahma Muhurat')} value={muhurat.brahma} tone="good" shubh language={language} />
-            <DataRow label={t(language, 'अभिजित', 'Abhijit')} value={muhurat.abhijit} tone="good" shubh language={language} />
+            <DataRow label={t(language, 'ब्रह्म मुहूर्त', 'Brahma Muhurat')} value={muhurat.brahma} tone="good" shubh pulse={periodPulseKey === 'brahma'} language={language} />
+            <DataRow label={t(language, 'अभिजित', 'Abhijit')} value={muhurat.abhijit} tone="good" shubh pulse={periodPulseKey === 'abhijit'} language={language} />
             <DataRow label={t(language, 'राहु काल', 'Rahu Kaal')} value={muhurat.rahuKaal} tone="bad" />
             <DataRow label={t(language, 'गुलिक', 'Gulika')} value={muhurat.gulikaKaal} />
             <DataRow label={t(language, 'यमगण्ड', 'Yamaganda')} value={muhurat.yamaganda} tone="bad" />
@@ -550,12 +586,12 @@ function InternationalTimeCard({ now, location, language }) {
   )
 }
 
-function DataRow({ label, value, tone = 'neutral', shubh = false, currentBadge = false, highlight = false, language = 'hi' }) {
+function DataRow({ label, value, tone = 'neutral', shubh = false, currentBadge = false, highlight = false, pulse = false, language = 'hi' }) {
   const toneClass = tone === 'good' ? 'text-softgold' : tone === 'bad' ? 'text-[#f4b469]' : 'text-ivory/90'
   const isShubh = shubh
   return (
     <div
-      className={`premium-card lift-card data-row-card rounded-md border bg-[rgba(73,45,17,0.25)] px-2.5 py-1.5 shadow-[inset_0_0_14px_rgba(0,0,0,0.28)] ${
+      className={`premium-card lift-card data-row-card rounded-md border bg-[rgba(73,45,17,0.25)] px-2.5 py-1.5 shadow-[inset_0_0_14px_rgba(0,0,0,0.28)] ${pulse ? 'shubh-start-pulse' : ''} ${
         isShubh
           ? 'shubh-row border-l-[3px] border-l-[rgba(0,212,255,0.82)] border-y-gold/14 border-r-gold/14'
           : highlight

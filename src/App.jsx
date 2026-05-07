@@ -6,7 +6,6 @@ import { resolveNetworkTimeOffset } from './lib/networkTime'
 import { calculatePanchang } from './lib/panchang'
 import { getCachedSolarTimes, resolveSolarTimes } from './lib/solar'
 import { getDayPart } from './lib/theme'
-import { formatClock } from './lib/time'
 import { speakMuhurat } from './lib/voice'
 
 const locationStorageKey = 'vedic_location'
@@ -120,7 +119,10 @@ function App() {
   const [voiceMode, setVoiceMode] = useState('silent')
   const [locationStatus, setLocationStatus] = useState({ state: 'idle', message: '' })
   const [panchangSyncing, setPanchangSyncing] = useState(false)
+  const [soundNotice, setSoundNotice] = useState('')
+  const [shubhPulseKey, setShubhPulseKey] = useState('')
   const lastAnnouncementRef = useRef('')
+  const lastPulseKeyRef = useRef('')
   const lastLocationKeyRef = useRef(`${location.latitude},${location.longitude}`)
   const solarRequestRef = useRef(0)
   const languageRef = useRef(language)
@@ -279,11 +281,27 @@ function App() {
       mode: voiceMode,
       muhurat: muhurat.current,
       panchang,
-      timeText: formatClock(now),
+      now,
+      vedicDayStart: muhurat.vedicDayStart,
+      countdownMs: muhurat.countdownMs,
       lastKeyRef: lastAnnouncementRef,
       language,
+      onAudioBlocked: () => {
+        setSoundNotice(language === 'hi' ? 'ध्वनि चालू करने के लिए एक बार स्क्रीन पर टैप करें।' : 'Tap once to enable sound.')
+        window.setTimeout(() => setSoundNotice(''), 4200)
+      },
     })
   }, [voiceMode, muhurat, panchang, now, language])
+
+  useEffect(() => {
+    const key = `${muhurat.current?.name || ''}-${muhurat.current?.start?.getTime?.() || ''}`
+    if (!key || lastPulseKeyRef.current === key || muhurat.badgeType !== 'good') return
+
+    lastPulseKeyRef.current = key
+    setShubhPulseKey(key)
+    const timer = window.setTimeout(() => setShubhPulseKey(''), 10000)
+    return () => window.clearTimeout(timer)
+  }, [muhurat])
 
   function handleSelectLocation(nextLocation) {
     const manualLocation = normalizeLocation(nextLocation, 'Manual')
@@ -352,6 +370,8 @@ function App() {
       onDetectLocation={handleDetectLocation}
       locationStatus={locationStatus}
       panchangSyncing={panchangSyncing}
+      soundNotice={soundNotice}
+      shubhPulseActive={Boolean(shubhPulseKey)}
     />
   )
 }
