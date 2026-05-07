@@ -147,8 +147,8 @@ export default function VedicWatch({
         </div>
       ) : null}
 
-      <section className="watch-grid relative z-10 mx-auto grid h-full w-full max-w-[1480px] items-center gap-[clamp(12px,1.8vw,26px)] px-[clamp(12px,2vw,32px)] pt-11 pb-10 max-lg:grid-cols-1 max-lg:grid-rows-[minmax(0,1fr)_auto] max-lg:gap-3 max-lg:pt-14">
-        <div className="watch-column watch-column-left grid gap-3 max-lg:hidden">
+      <section className="watch-grid relative z-10 mx-auto grid h-full w-full max-w-[1500px] items-center gap-[clamp(24px,2vw,30px)] px-[clamp(10px,1.6vw,28px)] pt-11 pb-10 max-lg:grid-cols-1 max-lg:grid-rows-[minmax(0,1fr)_auto] max-lg:gap-3 max-lg:pt-14">
+        <div className="watch-column watch-column-left grid gap-2.5 max-lg:hidden">
           <FactBox language={language} fact={fact} category={activeFact.category} />
           <SidePanel title={t(language, 'पंचांग विवरण', 'Panchang Details')} delay={0}>
             {panchangSyncing ? <SyncingPill language={language} /> : null}
@@ -161,7 +161,7 @@ export default function VedicWatch({
           <VedicTimeInfo language={language} />
         </div>
 
-        <div className="watch-center relative mx-auto grid w-full place-items-center">
+        <div className="watch-center relative mx-auto grid w-full place-items-center px-4">
           <WatchFace now={now} panchang={panchang} muhurat={muhurat} language={language} weekday={weekday} />
           <div className="mt-3 hidden w-[min(92vw,680px)] space-y-3 max-lg:block">
             <FactBox language={language} fact={fact} category={activeFact.category} compact />
@@ -169,7 +169,7 @@ export default function VedicWatch({
           </div>
         </div>
 
-        <div className="watch-column watch-column-right grid gap-3 max-lg:hidden">
+        <div className="watch-column watch-column-right grid gap-2.5 max-lg:hidden">
           <SidePanel title={t(language, 'वैदिक मुहूर्त (30 प्रणाली)', 'Vedic Muhurat (30 System)')} delay={2.6}>
             <MethodNote language={language} />
             <DataRow
@@ -260,7 +260,7 @@ function WatchFace({ now, panchang, muhurat, language, weekday }) {
 
   return (
     <motion.section
-      className="watch-face relative aspect-square w-[min(74vh,42vw,720px)] max-w-[720px] overflow-visible rounded-full"
+      className="watch-face relative aspect-square w-[min(85vh,50vw,820px)] max-w-[820px] overflow-visible rounded-full"
       animate={{ scale: [1, 1.015, 1] }}
       transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
       onPointerMove={handlePointerMove}
@@ -438,12 +438,12 @@ function CleanMoon({ illumination = 0, phase = 0 }) {
 function SidePanel({ title, children, className = '', delay = 0 }) {
   return (
     <motion.aside
-      className={`side-panel bronze-glass premium-card lift-card relative z-30 rounded-lg p-3.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)] ${className}`}
+      className={`side-panel bronze-glass premium-card lift-card relative z-30 rounded-lg p-2.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)] ${className}`}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: delay * 0.03, ease: 'easeOut' }}
     >
-      <h2 className="side-panel-title mb-2.5 truncate font-serifHindi text-[clamp(15px,1.35vw,20px)] font-black text-softgold">{title}</h2>
+      <h2 className="side-panel-title mb-2 truncate font-serifHindi text-[clamp(14px,1.2vw,18px)] font-black text-softgold">{title}</h2>
       <div className="side-panel-body grid gap-1.5">{children}</div>
     </motion.aside>
   )
@@ -451,11 +451,11 @@ function SidePanel({ title, children, className = '', delay = 0 }) {
 
 function VedicTimeInfo({ language }) {
   return (
-    <section className="vedic-time-info bronze-glass premium-card lift-card relative z-30 rounded-lg p-3.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
-      <h2 className="mb-2 font-serifHindi text-[clamp(14px,1.18vw,17px)] font-black text-softgold">
+    <section className="vedic-time-info bronze-glass premium-card lift-card relative z-30 rounded-lg p-2.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
+      <h2 className="mb-1.5 font-serifHindi text-[clamp(13px,1.08vw,16px)] font-black text-softgold">
         {t(language, 'वैदिक समय', 'Vedic Time')}
       </h2>
-      <p className="font-serifHindi text-[12px] leading-snug text-[#FFF4D6]">
+      <p className="font-serifHindi text-[11.5px] leading-snug text-[#FFF4D6]">
         {t(
           language,
           'वैदिक वॉच 30 मुहूर्तों वाले दिन पर आधारित है। हर मुहूर्त 48 मिनट का होता है और गणना सूर्योदय से 0:00 पर शुरू होती है।',
@@ -471,7 +471,7 @@ function DataRow({ label, value, tone = 'neutral', shubh = false, language = 'hi
   const isShubh = shubh || tone === 'good'
   return (
     <div
-      className={`premium-card lift-card data-row-card rounded-md border bg-[rgba(73,45,17,0.25)] px-3 py-1.5 shadow-[inset_0_0_14px_rgba(0,0,0,0.28)] ${
+      className={`premium-card lift-card data-row-card rounded-md border bg-[rgba(73,45,17,0.25)] px-2.5 py-1.5 shadow-[inset_0_0_14px_rgba(0,0,0,0.28)] ${
         isShubh
           ? 'shubh-row border-l-[3px] border-l-[rgba(0,212,255,0.82)] border-y-gold/14 border-r-gold/14'
           : 'border-gold/14'
@@ -486,7 +486,7 @@ function DataRow({ label, value, tone = 'neutral', shubh = false, language = 'hi
           </span>
         ) : null}
       </div>
-      <div className={`data-row-value mt-0.5 truncate font-serifHindi text-[14px] font-bold ${toneClass}`}>{value || '—'}</div>
+      <div className={`data-row-value mt-0.5 truncate font-serifHindi text-[13.5px] font-bold ${toneClass}`}>{value || '—'}</div>
     </div>
   )
 }
@@ -494,7 +494,7 @@ function DataRow({ label, value, tone = 'neutral', shubh = false, language = 'hi
 function FactBox({ language, fact, category, compact = false }) {
   return (
     <motion.section
-      className={`fact-card premium-card lift-card relative z-30 rounded-lg p-3.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)] ${compact ? 'mx-auto w-[min(92vw,680px)]' : ''}`}
+      className={`fact-card premium-card lift-card relative z-30 rounded-lg p-2.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)] ${compact ? 'mx-auto w-[min(92vw,680px)]' : ''}`}
       initial={{ opacity: 0, y: 8 }}
       animate={{
         opacity: 1,

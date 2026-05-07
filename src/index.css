@@ -101,7 +101,7 @@ main {
 }
 
 .watch-grid {
-  grid-template-columns: minmax(260px, 0.9fr) minmax(470px, 1.45fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(260px, 0.8fr) minmax(600px, 1.6fr) minmax(260px, 0.9fr);
   max-height: 100vh;
 }
 
@@ -118,7 +118,8 @@ main {
 
 .watch-center {
   min-width: 0;
-  max-height: 86vh;
+  max-height: 87vh;
+  overflow: visible;
 }
 
 button,
@@ -766,44 +767,44 @@ select option {
 
 @media (max-height: 820px) and (min-width: 1025px) {
   .watch-grid {
-    grid-template-columns: minmax(250px, 0.9fr) minmax(430px, 1.35fr) minmax(290px, 1fr);
-    gap: clamp(10px, 1.4vw, 18px);
+    grid-template-columns: minmax(240px, 0.78fr) minmax(560px, 1.55fr) minmax(240px, 0.88fr);
+    gap: clamp(20px, 1.7vw, 26px);
     padding-top: 42px;
     padding-bottom: 30px;
   }
 
   .watch-face {
-    width: min(68vh, 39vw, 650px);
-    max-width: 650px;
+    width: min(79vh, 47vw, 760px);
+    max-width: 760px;
   }
 
   .watch-column {
     max-height: 87vh;
-    gap: 9px;
+    gap: 8px;
   }
 
   .side-panel,
   .vedic-time-info,
   .fact-card {
-    padding: 10px;
+    padding: 9px;
   }
 
   .side-panel-title {
-    margin-bottom: 7px;
-    font-size: clamp(13px, 1.1vw, 17px);
+    margin-bottom: 6px;
+    font-size: clamp(12.5px, 1.02vw, 16px);
   }
 
   .side-panel-body {
-    gap: 5px;
+    gap: 4px;
   }
 
   .data-row-card {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 4px;
+    padding-bottom: 4px;
   }
 
   .data-row-value {
-    font-size: 12.5px;
+    font-size: 12px;
   }
 
   .fact-copy {
