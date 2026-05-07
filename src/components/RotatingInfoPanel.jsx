@@ -6,10 +6,8 @@ function t(language, hi, en) {
   return language === 'hi' ? hi : en
 }
 
-const invalidMuhuratDisplayNames = new Set(['\u091c\u0940\u0935'])
-
 function displayMuhuratName(name) {
-  return name && name !== '—' && !invalidMuhuratDisplayNames.has(name) ? name : '—'
+  return name && name !== '—' ? name : '—'
 }
 
 export default function RotatingInfoPanel({ muhurat, panchang, language }) {

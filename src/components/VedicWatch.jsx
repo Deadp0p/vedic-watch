@@ -14,10 +14,8 @@ function t(language, hi, en) {
   return language === 'hi' ? hi : en
 }
 
-const invalidMuhuratDisplayNames = new Set(['\u091c\u0940\u0935'])
-
-function displayMuhuratName(name, fallback = '—') {
-  return name && name !== '—' && !invalidMuhuratDisplayNames.has(name) ? name : fallback
+function displayMuhuratName(name) {
+  return name && name !== '—' ? name : '—'
 }
 
 function getDayOfYear(date) {
@@ -185,7 +183,7 @@ export default function VedicWatch({
             <MethodNote language={language} type="vedic" />
             <DataRow
               label={t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
-              value={displayMuhuratName(muhurat.current.name, formatVedicTimeTitle(vedicTime.number, language))}
+              value={displayMuhuratName(muhurat.current.name)}
               tone={muhurat.badgeType === 'good' ? 'good' : 'neutral'}
               currentBadge
               highlight
@@ -387,7 +385,7 @@ function MuhuratCard({ muhurat, language, vedicTime }) {
         {t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
       </div>
       <div className="mt-1 truncate font-serifHindi text-[clamp(14px,1.65vw,19px)] font-black text-softgold">
-        {displayMuhuratName(muhurat.current.name, formatVedicTimeTitle(vedicTime.number, language))}
+        {displayMuhuratName(muhurat.current.name)}
       </div>
       <motion.div
         className="mt-0.5 font-digital text-[clamp(25px,3.75vw,40px)] font-black leading-none text-ivory"
@@ -396,7 +394,7 @@ function MuhuratCard({ muhurat, language, vedicTime }) {
         }}
         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
       >
-        {formatVedicClock(vedicTime, language)}
+        {formatRemainingMuhuratTime(vedicTime.remainingSeconds)}
       </motion.div>
       <div className="mt-0.5 truncate font-serifHindi text-[clamp(8px,0.9vw,10px)] text-ivory/68">
         {formatVedicTimeSummary(vedicTime, language)}
@@ -481,22 +479,28 @@ function formatVedicMinutes(minutes, language) {
   return language === 'hi' ? `${minutes} मिनट` : `${minutes} min`
 }
 
-function formatVedicClock(vedicTime, language) {
-  const timeText = `${String(vedicTime.number).padStart(2, '0')}:${String(vedicTime.minutes).padStart(2, '0')}`
-  return language === 'hi' ? `${timeText} वैदिक समय` : `${timeText} Vedic Time`
+function formatRemainingMuhuratTime(remainingSeconds) {
+  const clampedSeconds = Math.max(0, Math.min(48 * 60, remainingSeconds))
+  const minutes = Math.floor(clampedSeconds / 60)
+  const seconds = clampedSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
 function formatVedicTimeSummary(vedicTime, language) {
-  return `${formatVedicTimeTitle(vedicTime.number, language)} • ${formatVedicMinutes(vedicTime.minutes, language)}`
+  const elapsedText = language === 'hi' ? `${vedicTime.minutes} मिनट व्यतीत` : `${vedicTime.minutes} min elapsed`
+  return `${formatVedicTimeTitle(vedicTime.number, language)} • ${elapsedText}`
 }
 
 function getVedicTimeParts(now, muhurat) {
-  if (!(now instanceof Date) || !muhurat?.vedicDayStart) return { number: 1, minutes: 0 }
+  if (!(now instanceof Date) || !muhurat?.vedicDayStart) return { number: 1, minutes: 0, remainingSeconds: 48 * 60 }
   const segmentMs = 48 * 60000
   const elapsed = Math.max(0, now.getTime() - muhurat.vedicDayStart.getTime())
   const number = (Math.floor(elapsed / segmentMs) % 30) + 1
-  const minutes = Math.floor((elapsed % segmentMs) / 60000)
-  return { number, minutes }
+  const elapsedInMuhuratMs = elapsed % segmentMs
+  const minutes = Math.floor(elapsedInMuhuratMs / 60000)
+  const secondsElapsed = Math.floor(elapsedInMuhuratMs / 1000)
+  const remainingSeconds = 48 * 60 - secondsElapsed
+  return { number, minutes, remainingSeconds }
 }
 
 function VedicTimeInfo({ language, vedicTime }) {
@@ -506,7 +510,7 @@ function VedicTimeInfo({ language, vedicTime }) {
         {t(language, 'वैदिक समय', 'Vedic Time')}
       </h2>
       <div className="mb-1 font-serifHindi text-[12px] font-black text-[#FFF4D6]">
-        {t(language, 'अभी', 'Now')}: {formatVedicTimeSummary(vedicTime, language)}
+        {t(language, 'अभी', 'Now')}: {formatVedicTimeTitle(vedicTime.number, language)} • {formatVedicMinutes(vedicTime.minutes, language)}
       </div>
       <p className="font-serifHindi text-[11.5px] leading-snug text-[#FFF4D6]">
         {t(
