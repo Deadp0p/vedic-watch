@@ -108,6 +108,7 @@ export default function VedicWatch({
   const factIndex = getFactIndexForStep(dayOfYear, matchingFactIndexes, factRotationStep)
   const activeFact = sanatanFacts[factIndex] || sanatanFacts[0]
   const fact = activeFact[language === 'hi' ? 'hi' : 'en']
+  const [isFullscreen, setIsFullscreen] = useState(() => Boolean(document.fullscreenElement))
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -123,11 +124,36 @@ export default function VedicWatch({
     return () => window.clearInterval(timer)
   }, [dayOfYear, factSelectionKey, matchingFactIndexes])
 
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  async function handleToggleFullscreen() {
+    if (!document.fullscreenEnabled) return
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => {})
+      return
+    }
+
+    await document.documentElement.requestFullscreen().catch(() => {})
+  }
+
   return (
     <main className="relative h-[100svh] w-screen overflow-hidden bg-black text-ivory">
       <AnimatedBackground />
 
       <div className="top-controls">
+        <button type="button" className="watch-button fullscreen-button" onClick={handleToggleFullscreen}>
+          {isFullscreen
+            ? t(language, '\u092a\u0942\u0930\u094d\u0923 \u0938\u094d\u0915\u094d\u0930\u0940\u0928 \u0938\u0947 \u092c\u093e\u0939\u0930', 'Exit Fullscreen')
+            : t(language, '\u092a\u0942\u0930\u094d\u0923 \u0938\u094d\u0915\u094d\u0930\u0940\u0928', 'Fullscreen')}
+        </button>
         <button type="button" className="watch-button" onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}>
           {language === 'hi' ? 'हिं' : 'EN'}
         </button>

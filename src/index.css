@@ -141,9 +141,20 @@ select {
   white-space: nowrap;
 }
 
+.fullscreen-button {
+  min-width: 98px;
+}
+
 .icon-button {
   width: 36px;
   color: #f5d76e;
+}
+
+main:fullscreen {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
 }
 
 .location-control,
@@ -718,6 +729,7 @@ select option {
   .top-controls {
     left: 50%;
     right: auto;
+    flex-wrap: wrap;
     gap: 5px;
     max-width: calc(100vw - 16px);
     transform: translateX(-50%);
