@@ -11,7 +11,7 @@ export default function RotatingInfoPanel({ muhurat, panchang, language }) {
     {
       label: t(language, 'मुहूर्त', 'Muhurat'),
       value: muhurat.current.name,
-      meta: `${t(language, 'अगला', 'Next')} ${muhurat.next.name} · ${formatCountdown(muhurat.countdownMs)}`,
+      meta: `${t(language, 'अगला मुहूर्त', 'Next Muhurat')} ${muhurat.next.name} · ${formatCountdown(muhurat.countdownMs)}`,
       tone: muhurat.badgeType,
     },
     {

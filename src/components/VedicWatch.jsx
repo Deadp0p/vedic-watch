@@ -372,7 +372,7 @@ function MuhuratCard({ muhurat, language }) {
         {muhurat.countdownMs >= 0 ? formatCountdownLocal(muhurat.countdownMs) : '00:00'}
       </motion.div>
       <div className="mt-1 truncate text-[clamp(8px,0.9vw,10px)] text-ivory/68">
-        {t(language, 'अगला', 'Next')} {muhurat.next.name}
+        {t(language, 'अगला मुहूर्त', 'Next Muhurat')} {muhurat.next.name}
       </div>
     </motion.div>
   )
