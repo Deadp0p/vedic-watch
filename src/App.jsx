@@ -6,7 +6,7 @@ import { resolveNetworkTimeOffset } from './lib/networkTime'
 import { calculatePanchang } from './lib/panchang'
 import { getCachedSolarTimes, resolveSolarTimes } from './lib/solar'
 import { getDayPart } from './lib/theme'
-import { speakMuhurat } from './lib/voice'
+import { speakMuhurat, stopVoiceAudio } from './lib/voice'
 
 const locationStorageKey = 'vedic_location'
 const networkSyncIntervalMs = 30 * 60 * 1000
@@ -122,6 +122,9 @@ function App() {
   const [soundNotice, setSoundNotice] = useState('')
   const [shubhPulseKey, setShubhPulseKey] = useState('')
   const lastAnnouncementRef = useRef('')
+  const modeAnnouncementRef = useRef('')
+  const previousVoiceModeRef = useRef(voiceMode)
+  const observedMuhuratKeyRef = useRef('')
   const lastPulseKeyRef = useRef('')
   const lastLocationKeyRef = useRef(`${location.latitude},${location.longitude}`)
   const solarRequestRef = useRef(0)
@@ -260,6 +263,7 @@ function App() {
     [now, location, panchang.sunrise, panchang.sunset],
   )
   const dayPart = getDayPart(now, panchang.sunrise, panchang.sunset)
+  const currentMuhuratKey = `${muhurat.current?.name || ''}-${muhurat.current?.start?.getTime?.() || ''}`
 
   useEffect(() => {
     document.documentElement.dataset.dayPart = dayPart
@@ -277,6 +281,51 @@ function App() {
   }, [location])
 
   useEffect(() => {
+    const previousMode = previousVoiceModeRef.current
+    previousVoiceModeRef.current = voiceMode
+
+    if (previousMode === voiceMode) return
+
+    if (voiceMode === 'silent') {
+      stopVoiceAudio()
+      window.setTimeout(() => setSoundNotice(''), 0)
+      return
+    }
+
+    if (voiceMode === 'good' && muhurat.current?.type !== 'good') return
+
+    speakMuhurat({
+      mode: voiceMode,
+      muhurat: muhurat.current,
+      panchang,
+      now,
+      vedicDayStart: muhurat.vedicDayStart,
+      countdownMs: muhurat.countdownMs,
+      lastKeyRef: modeAnnouncementRef,
+      language,
+      onAudioBlocked: () => {
+        setSoundNotice(
+          language === 'hi'
+            ? '\u0927\u094d\u0935\u0928\u093f \u091a\u093e\u0932\u0942 \u0915\u0930\u0928\u0947 \u0915\u0947 \u0932\u093f\u090f \u0938\u094d\u0915\u094d\u0930\u0940\u0928 \u092a\u0930 \u090f\u0915 \u092c\u093e\u0930 \u091f\u0948\u092a \u0915\u0930\u0947\u0902\u0964'
+            : 'Tap once to enable sound.',
+        )
+        window.setTimeout(() => setSoundNotice(''), 4200)
+      },
+      trigger: 'mode',
+    })
+  }, [voiceMode, currentMuhuratKey, language, muhurat, now, panchang])
+
+  useEffect(() => {
+    if (!currentMuhuratKey) return
+
+    if (!observedMuhuratKeyRef.current) {
+      observedMuhuratKeyRef.current = currentMuhuratKey
+      return
+    }
+
+    if (observedMuhuratKeyRef.current === currentMuhuratKey) return
+    observedMuhuratKeyRef.current = currentMuhuratKey
+
     speakMuhurat({
       mode: voiceMode,
       muhurat: muhurat.current,
@@ -290,8 +339,11 @@ function App() {
         setSoundNotice(language === 'hi' ? 'ध्वनि चालू करने के लिए एक बार स्क्रीन पर टैप करें।' : 'Tap once to enable sound.')
         window.setTimeout(() => setSoundNotice(''), 4200)
       },
+      trigger: 'transition',
     })
-  }, [voiceMode, muhurat, panchang, now, language])
+    // This intentionally runs only when the Muhurat key changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMuhuratKey])
 
   useEffect(() => {
     const key = `${muhurat.current?.name || ''}-${muhurat.current?.start?.getTime?.() || ''}`

@@ -12,6 +12,8 @@ let bellTimer = null
 let bellFadeTimer = null
 let bellResolveTimer = null
 let bellAudio = null
+let speechStartTimer = null
+let voiceRunId = 0
 
 const englishNames = {
   रुद्र: 'Rudra',
@@ -292,6 +294,15 @@ async function playSoftBell(onAudioBlocked) {
   }
 }
 
+export function stopVoiceAudio() {
+  voiceRunId += 1
+  clearBellTimers()
+  stopMp3Bell()
+  window.clearTimeout(speechStartTimer)
+  speechStartTimer = null
+  window.speechSynthesis?.cancel?.()
+}
+
 function buildAnnouncement({ language, muhurat, panchang, now, vedicDayStart, countdownMs }) {
   const vedic = getVedicSpeechParts(muhurat, vedicDayStart, countdownMs)
   const timeText = formatClockTime(now)
@@ -314,14 +325,17 @@ export async function speakMuhurat({
   lastKeyRef,
   language = 'hi',
   onAudioBlocked,
+  trigger = 'transition',
 }) {
   if (mode === 'silent' || !muhurat?.name || muhurat.name === '—' || !window.speechSynthesis) return
   if (mode === 'good' && muhurat.type !== 'good') return
 
   const key = `${muhurat.name}-${muhurat.start?.getTime?.() || ''}`
-  if (!key || lastKeyRef.current === key || getStoredAnnouncementKey() === key) return
-  lastKeyRef.current = key
-  setStoredAnnouncementKey(key)
+  const guardKey = `${trigger}-${mode}-${key}`
+  if (!key || lastKeyRef.current === guardKey) return
+  if (trigger === 'transition' && getStoredAnnouncementKey() === key) return
+  lastKeyRef.current = guardKey
+  if (trigger === 'transition') setStoredAnnouncementKey(key)
 
   const text = buildAnnouncement({ language, muhurat, panchang, now, vedicDayStart, countdownMs })
   const utterance = new SpeechSynthesisUtterance(text)
@@ -331,16 +345,18 @@ export async function speakMuhurat({
   utterance.pitch = 0.9
   utterance.volume = 1
 
-  window.speechSynthesis.cancel()
+  stopVoiceAudio()
+  const runId = voiceRunId
   await playSoftBell(onAudioBlocked)
 
-  window.setTimeout(() => {
+  speechStartTimer = window.setTimeout(() => {
     utterance.onend = () => {
-      playSoftBell(onAudioBlocked)
+      if (runId === voiceRunId) playSoftBell(onAudioBlocked)
     }
     utterance.onerror = () => {
-      playSoftBell(onAudioBlocked)
+      if (runId === voiceRunId) playSoftBell(onAudioBlocked)
     }
+    if (runId !== voiceRunId) return
     window.speechSynthesis.speak(utterance)
   }, 300)
 }
