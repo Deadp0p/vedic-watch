@@ -4,7 +4,7 @@ import LocationSelector from './LocationSelector'
 import RotatingInfoPanel from './RotatingInfoPanel'
 import VoiceControls from './VoiceControls'
 import { sanatanFacts } from '../data/sanatanFacts'
-import { formatClock, formatEnglishDate, formatHindiDate, formatShortTime } from '../lib/time'
+import { formatClock, formatHindiDate, formatShortTime } from '../lib/time'
 import clockBase from '../assets/clock3.png'
 import clockMiddle from '../assets/clock2.png'
 import clockFront from '../assets/clock-1.png'
@@ -12,6 +12,12 @@ import clockFront from '../assets/clock-1.png'
 
 function t(language, hi, en) {
   return language === 'hi' ? hi : en
+}
+
+const invalidMuhuratDisplayNames = new Set(['\u091c\u0940\u0935'])
+
+function displayMuhuratName(name) {
+  return name && name !== '—' && !invalidMuhuratDisplayNames.has(name) ? name : '—'
 }
 
 function getDayOfYear(date) {
@@ -94,7 +100,7 @@ export default function VedicWatch({
   locationStatus,
   panchangSyncing,
 }) {
-  const weekday = new Intl.DateTimeFormat(language === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'long' }).format(now)
+  const vedicTime = getVedicTimeParts(now, muhurat)
   const dayOfYear = getDayOfYear(now)
   const currentYear = now.getFullYear()
   const preferredFactCategories = getPreferredFactCategories(now, panchang, muhurat)
@@ -158,37 +164,49 @@ export default function VedicWatch({
             <DataRow label={t(language, 'चंद्र राशि', 'Moon Sign')} value={panchang.moonSign} />
             <DataRow label={t(language, 'सूर्य राशि', 'Sun Sign')} value={panchang.sunSign} />
           </SidePanel>
-          <VedicTimeInfo language={language} muhurat={muhurat} />
+          <VedicTimeInfo language={language} vedicTime={vedicTime} />
         </div>
 
         <div className="watch-center relative mx-auto grid w-full place-items-center px-4">
-          <WatchFace now={now} panchang={panchang} muhurat={muhurat} language={language} weekday={weekday} />
+          <WatchFace now={now} panchang={panchang} muhurat={muhurat} language={language} vedicTime={vedicTime} />
           <div className="mt-3 hidden w-[min(92vw,680px)] space-y-3 max-lg:block">
             <FactBox language={language} fact={fact} category={activeFact.category} compact />
             <RotatingInfoPanel now={now} muhurat={muhurat} panchang={panchang} language={language} />
           </div>
         </div>
 
-        <div className="watch-column watch-column-right grid gap-2.5 max-lg:hidden">
-          <SidePanel title={t(language, 'वैदिक मुहूर्त (30 प्रणाली)', 'Vedic Muhurat (30 System)')} delay={2.6}>
+        <div className="watch-column watch-column-right grid gap-3 max-lg:hidden">
+          <SidePanel
+            title={t(language, 'वैदिक मुहूर्त (30 प्रणाली)', 'Vedic Muhurat (30 System)')}
+            badge={t(language, 'स्थिर', 'Fixed')}
+            className="vedic-system-panel"
+            delay={2.6}
+          >
             <MethodNote language={language} type="vedic" />
             <DataRow
               label={t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
-              value={muhurat.current.name}
+              value={displayMuhuratName(muhurat.current.name)}
               tone={muhurat.badgeType === 'good' ? 'good' : 'neutral'}
-              shubh={muhurat.badgeType === 'good'}
+              currentBadge
+              highlight
               language={language}
             />
-            <DataRow label={t(language, 'अगला मुहूर्त', 'Next Muhurat')} value={muhurat.next.name} />
+            <DataRow label={t(language, 'अगला मुहूर्त', 'Next Muhurat')} value={displayMuhuratName(muhurat.next.name)} />
           </SidePanel>
-          <SidePanel title={t(language, 'पारंपरिक मुहूर्त', 'Traditional Muhurat')} delay={3.2}>
+          <SidePanel
+            title={t(language, 'पारंपरिक मुहूर्त', 'Traditional Muhurat')}
+            badge={t(language, 'सूर्य आधारित', 'Sun-based')}
+            className="traditional-system-panel"
+            delay={3.2}
+          >
             <MethodNote language={language} type="traditional" />
-            <DataRow label={t(language, 'ब्रह्म मुहूर्त', 'Brahma Muhurat')} value={muhurat.brahma} tone="good" />
-            <DataRow label={t(language, 'अभिजित', 'Abhijit')} value={muhurat.abhijit} tone="good" />
+            <DataRow label={t(language, 'ब्रह्म मुहूर्त', 'Brahma Muhurat')} value={muhurat.brahma} tone="good" shubh language={language} />
+            <DataRow label={t(language, 'अभिजित', 'Abhijit')} value={muhurat.abhijit} tone="good" shubh language={language} />
             <DataRow label={t(language, 'राहु काल', 'Rahu Kaal')} value={muhurat.rahuKaal} tone="bad" />
             <DataRow label={t(language, 'गुलिक', 'Gulika')} value={muhurat.gulikaKaal} />
             <DataRow label={t(language, 'यमगण्ड', 'Yamaganda')} value={muhurat.yamaganda} tone="bad" />
           </SidePanel>
+          <InternationalTimeCard now={now} location={location} language={language} />
         </div>
       </section>
       <AccuracyFooter language={language} location={location} accuracyInfo={accuracyInfo} />
@@ -211,12 +229,12 @@ function MethodNote({ language, type = 'vedic' }) {
       ? t(
           language,
           'यह मुहूर्त सूर्योदय और सूर्यास्त के अनुसार बदलते हैं।',
-          'These Muhurats change according to sunrise and sunset.',
+          'These timings vary according to sunrise and sunset.',
         )
       : t(
           language,
           'यह 48 मिनट के स्थिर मुहूर्त पर आधारित प्रणाली है।',
-          'This system is based on fixed 48-minute Muhurats.',
+          'This system uses fixed 48-minute Muhurta divisions.',
         )
 
   return (
@@ -227,37 +245,35 @@ function MethodNote({ language, type = 'vedic' }) {
 }
 
 function AccuracyFooter({ language, location, accuracyInfo }) {
-  const details = accuracyInfo
-    ? [
-        `${t(language, '\u0938\u092e\u092f', 'Time')}: ${accuracyInfo.timeSource}`,
-        `${t(language, '\u0905\u0902\u0924\u0930', 'Offset')}: ${accuracyInfo.timeOffsetSeconds}s`,
-        `${t(language, '\u0938\u0942\u0930\u094d\u092f', 'Sun')}: ${accuracyInfo.sunriseSource}`,
-        `${t(language, '\u0938\u094d\u0925\u093e\u0928', 'Location')}: ${accuracyInfo.locationMode}`,
-        `${Number(accuracyInfo.latitude).toFixed(4)}, ${Number(accuracyInfo.longitude).toFixed(4)}`,
-        `${t(language, '\u0938\u093f\u0902\u0915', 'Sync')}: ${formatShortTime(accuracyInfo.lastSyncedAt)}`,
-      ].join(' · ')
-    : ''
-
   return (
     <footer className="accuracy-footer">
-      <div>
-        {t(
-          language,
-          `गणना ${location.nameHi} के सूर्योदय/सूर्यास्त पर आधारित है।`,
-          `Calculations are based on sunrise/sunset for ${location.nameEn}.`,
-        )}
-      </div>
       {accuracyInfo ? (
+        <>
+          <div>
+            {t(language, '\u0938\u0942\u0930\u094d\u092f\u094b\u0926\u092f', 'Sunrise')}: {formatShortTime(accuracyInfo.sunrise)} ·{' '}
+            {t(language, '\u0938\u0942\u0930\u094d\u092f\u093e\u0938\u094d\u0924', 'Sunset')}: {formatShortTime(accuracyInfo.sunset)} ·{' '}
+            {t(language, '\u0938\u092e\u092f \u0938\u094d\u0930\u094b\u0924', 'Time source')}: {accuracyInfo.timeSource}
+          </div>
+          <div>
+            {t(language, '\u0938\u094d\u0925\u093e\u0928', 'Location')}: {language === 'hi' ? location.nameHi : location.nameEn} ·{' '}
+            {t(language, 'GPS', 'GPS')}: {accuracyInfo.locationMode} ·{' '}
+            {t(language, '\u0938\u093f\u0902\u0915', 'Sync')}: {formatShortTime(accuracyInfo.lastSyncedAt)}
+          </div>
+        </>
+      ) : (
         <div>
-          {t(language, '\u0938\u0942\u0930\u094d\u092f\u094b\u0926\u092f', 'Sunrise')}: {formatShortTime(accuracyInfo.sunrise)} ·{' '}
-          {t(language, '\u0938\u0942\u0930\u094d\u092f\u093e\u0938\u094d\u0924', 'Sunset')}: {formatShortTime(accuracyInfo.sunset)} · {details}
+          {t(
+            language,
+            `गणना ${location.nameHi} के सूर्योदय/सूर्यास्त पर आधारित है।`,
+            `Calculations are based on sunrise/sunset for ${location.nameEn}.`,
+          )}
         </div>
-      ) : null}
+      )}
     </footer>
   )
 }
 
-function WatchFace({ now, panchang, muhurat, language, weekday }) {
+function WatchFace({ panchang, muhurat, language, vedicTime }) {
   const [parallax, setParallax] = useState({ x: 0, y: 0 })
 
   function handlePointerMove(event) {
@@ -281,21 +297,20 @@ function WatchFace({ now, panchang, muhurat, language, weekday }) {
       <div className="pointer-events-none absolute inset-[13%] z-20 rounded-full bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.35)_0%,rgba(0,0,0,0.15)_60%,transparent_100%)]" />
 
       <div className="bronze-glass premium-card centered-premium-card absolute left-1/2 top-[6.2%] z-40 flex w-[min(46%,300px)] -translate-x-1/2 flex-col items-center rounded-md px-3 py-1.5 text-center shadow-[0_12px_34px_rgba(0,0,0,0.42)] [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
-        <div className="font-digital text-[clamp(19px,3.1vw,32px)] font-black leading-none text-ivory drop-shadow-[0_0_7px_rgba(212,175,55,0.18)]">
-          {formatClock(now)}
+        <div className="font-serifHindi text-[clamp(17px,2.35vw,27px)] font-black leading-tight text-ivory drop-shadow-[0_0_7px_rgba(212,175,55,0.18)]">
+          {formatVedicTimeTitle(vedicTime.number, language)}
         </div>
-        <div className="mt-1 max-w-full truncate font-serifHindi text-[clamp(9px,1.1vw,13px)] leading-snug text-softgold">
-          {language === 'hi' ? formatHindiDate(now) : formatEnglishDate(now)}
+        <div className="mt-1 max-w-full truncate font-serifHindi text-[clamp(10px,1.15vw,13px)] leading-snug text-softgold">
+          {formatVedicMinutes(vedicTime.minutes, language)}
         </div>
-        <div className="mt-1 max-w-full truncate text-[clamp(8px,0.95vw,11px)] leading-snug text-antiquegold">{weekday}</div>
       </div>
 
-      <div className="absolute left-1/2 top-[30%] z-40 grid w-[min(50%,360px)] -translate-x-1/2 place-items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
+      <div className="absolute left-1/2 top-[30.5%] z-40 grid w-[min(50%,360px)] -translate-x-1/2 place-items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
         <CleanMoon phase={panchang.moonPhase} illumination={panchang.moonIllumination} />
       </div>
 
-      <div className="absolute left-1/2 top-[52%] z-50 flex w-[min(62%,390px)] -translate-x-1/2 flex-col items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
-        <div className="min-h-[1.2em] max-w-full overflow-visible whitespace-nowrap font-serifHindi text-[clamp(24px,3.8vw,40px)] font-black leading-[1.18] text-softgold drop-shadow-[0_0_7px_rgba(212,175,55,0.28)]">
+      <div className="absolute left-1/2 top-[53%] z-50 flex w-[min(62%,390px)] -translate-x-1/2 flex-col items-center text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
+        <div className="min-h-[1.2em] max-w-full overflow-visible whitespace-nowrap font-serifHindi text-[clamp(22px,3.55vw,37px)] font-black leading-[1.18] text-softgold drop-shadow-[0_0_7px_rgba(212,175,55,0.28)]">
           {panchang.tithi}
         </div>
         <div className="mt-3 max-w-full truncate font-serifHindi text-[clamp(12px,1.55vw,17px)] font-semibold leading-snug text-ivory/88">
@@ -360,7 +375,7 @@ function MechanicalClockLayers({ parallax }) {
 function MuhuratCard({ muhurat, language }) {
   return (
     <motion.div
-      className="muhurat-center-card bronze-glass premium-card centered-premium-card absolute bottom-[5.2%] left-1/2 z-40 w-[min(64%,410px)] -translate-x-1/2 rounded-md px-4 py-2.5 text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]"
+      className="muhurat-center-card bronze-glass premium-card centered-premium-card absolute bottom-[4.8%] left-1/2 z-40 w-[min(62%,390px)] -translate-x-1/2 rounded-md px-4 py-2 text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]"
       initial={{ opacity: 0, y: 8 }}
       animate={{
         opacity: 1,
@@ -371,9 +386,9 @@ function MuhuratCard({ muhurat, language }) {
       <div className="text-[clamp(8px,0.92vw,10px)] uppercase tracking-[0.14em] text-[#FFF4D6] opacity-100 [text-shadow:0_0_10px_rgba(255,244,214,0.26),0_3px_10px_rgba(0,0,0,0.86)]">
         {t(language, 'वर्तमान मुहूर्त', 'Current Muhurat')}
       </div>
-      <div className="mt-1 truncate font-serifHindi text-[clamp(14px,1.65vw,19px)] font-black text-softgold">{muhurat.current.name}</div>
+      <div className="mt-1 truncate font-serifHindi text-[clamp(14px,1.65vw,19px)] font-black text-softgold">{displayMuhuratName(muhurat.current.name)}</div>
       <motion.div
-        className="mt-1 font-digital text-[clamp(28px,4.1vw,44px)] font-black leading-none text-ivory"
+        className="mt-0.5 font-digital text-[clamp(25px,3.75vw,40px)] font-black leading-none text-ivory"
         animate={{
           opacity: [0.9, 1, 0.9],
         }}
@@ -381,7 +396,7 @@ function MuhuratCard({ muhurat, language }) {
       >
         {muhurat.countdownMs >= 0 ? formatCountdownLocal(muhurat.countdownMs) : '00:00'}
       </motion.div>
-      <div className="mt-1 truncate text-[clamp(8px,0.9vw,10px)] text-ivory/68">
+      <div className="mt-0.5 truncate text-[clamp(8px,0.9vw,10px)] text-ivory/68">
         {t(language, 'अगला मुहूर्त', 'Next Muhurat')}
       </div>
     </motion.div>
@@ -434,7 +449,7 @@ function CleanMoon({ illumination = 0, phase = 0 }) {
         animate={{ opacity: [0.48, 0.76, 0.48], scale: [0.96, 1.06, 0.96] }}
         transition={{ repeat: Infinity, duration: 6.5, ease: 'easeInOut' }}
       />
-      <div className="relative h-[clamp(82px,13.3vw,124px)] w-[clamp(82px,13.3vw,124px)] overflow-hidden rounded-full border border-softgold/48 bg-[#d8d4c5] shadow-[inset_-14px_-14px_24px_rgba(0,0,0,0.42),0_0_18px_rgba(212,175,55,0.16)]">
+      <div className="relative h-[clamp(78px,12.4vw,116px)] w-[clamp(78px,12.4vw,116px)] overflow-hidden rounded-full border border-softgold/48 bg-[#d8d4c5] shadow-[inset_-14px_-14px_24px_rgba(0,0,0,0.42),0_0_18px_rgba(212,175,55,0.16)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_34%_28%,rgba(255,255,255,0.86),transparent_18%),radial-gradient(circle_at_64%_64%,rgba(80,80,75,0.34),transparent_14%),radial-gradient(circle_at_45%_72%,rgba(80,80,75,0.25),transparent_10%)]" />
         <div
           className="absolute inset-y-[-4%] w-[110%] rounded-full bg-[#080704]/90 blur-[0.4px]"
@@ -445,7 +460,7 @@ function CleanMoon({ illumination = 0, phase = 0 }) {
   )
 }
 
-function SidePanel({ title, children, className = '', delay = 0 }) {
+function SidePanel({ title, badge, children, className = '', delay = 0 }) {
   return (
     <motion.aside
       className={`side-panel bronze-glass premium-card lift-card relative z-30 rounded-lg p-2.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)] ${className}`}
@@ -453,61 +468,92 @@ function SidePanel({ title, children, className = '', delay = 0 }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: delay * 0.03, ease: 'easeOut' }}
     >
-      <h2 className="side-panel-title mb-2 truncate font-serifHindi text-[clamp(14px,1.2vw,18px)] font-black text-softgold">{title}</h2>
+      <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
+        <h2 className="side-panel-title truncate font-serifHindi text-[clamp(14px,1.2vw,18px)] font-black text-softgold">{title}</h2>
+        {badge ? (
+          <span className="panel-mode-badge shrink-0 rounded-full border border-gold/24 bg-[rgba(212,175,55,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-antiquegold">
+            {badge}
+          </span>
+        ) : null}
+      </div>
       <div className="side-panel-body grid gap-1.5">{children}</div>
     </motion.aside>
   )
 }
 
-function formatVedicOrdinal(number, language) {
-  if (language === 'hi') return `${number}वाँ मुहूर्त`
-  const suffix = number % 10 === 1 && number !== 11 ? 'st' : number % 10 === 2 && number !== 12 ? 'nd' : number % 10 === 3 && number !== 13 ? 'rd' : 'th'
-  return `${number}${suffix} Muhurat`
+function formatVedicTimeTitle(number, language) {
+  return language === 'hi' ? `${number}वाँ मुहूर्त` : `Muhurta ${number}`
 }
 
-function getVedicTimeParts(muhurat) {
-  if (!muhurat?.vedicDayStart || !muhurat?.current?.start) return { number: 1, minutes: 0 }
+function formatVedicMinutes(minutes, language) {
+  return language === 'hi' ? `${minutes} मिनट` : `${minutes} min`
+}
+
+function getVedicTimeParts(now, muhurat) {
+  if (!(now instanceof Date) || !muhurat?.vedicDayStart) return { number: 1, minutes: 0 }
   const segmentMs = 48 * 60000
-  const elapsed = Math.max(0, muhurat.current.start.getTime() - muhurat.vedicDayStart.getTime())
+  const elapsed = Math.max(0, now.getTime() - muhurat.vedicDayStart.getTime())
   const number = (Math.floor(elapsed / segmentMs) % 30) + 1
-  const elapsedInCurrent = segmentMs - Math.max(0, muhurat.countdownMs || 0)
-  const minutes = Math.max(0, Math.floor(elapsedInCurrent / 60000))
-  return { number, minutes: Math.min(47, minutes) }
+  const minutes = Math.floor((elapsed % segmentMs) / 60000)
+  return { number, minutes }
 }
 
-function VedicTimeInfo({ language, muhurat }) {
-  const vedicTime = getVedicTimeParts(muhurat)
-
+function VedicTimeInfo({ language, vedicTime }) {
   return (
     <section className="vedic-time-info bronze-glass premium-card lift-card relative z-30 rounded-lg p-2.5 [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
       <h2 className="mb-1.5 font-serifHindi text-[clamp(13px,1.08vw,16px)] font-black text-softgold">
         {t(language, 'वैदिक समय', 'Vedic Time')}
       </h2>
       <div className="mb-1 grid gap-0.5 font-serifHindi">
-        <div className="text-[13px] font-black text-[#FFF4D6]">{formatVedicOrdinal(vedicTime.number, language)}</div>
+        <div className="text-[13px] font-black text-[#FFF4D6]">{formatVedicTimeTitle(vedicTime.number, language)}</div>
         <div className="text-[11px] text-antiquegold">
-          {language === 'hi' ? `${vedicTime.minutes} मिनट` : `${vedicTime.minutes} minutes`}
+          {formatVedicMinutes(vedicTime.minutes, language)}
         </div>
       </div>
       <p className="font-serifHindi text-[11.5px] leading-snug text-[#FFF4D6]">
-        {t(
-          language,
-          'यह 48 मिनट के स्थिर मुहूर्त पर आधारित प्रणाली है।',
-          'This system is based on fixed 48-minute Muhurats.',
-        )}
+        {t(language, '1 मुहूर्त = 48 मिनट', '1 Muhurta = 48 minutes')}
       </p>
     </section>
   )
 }
 
-function DataRow({ label, value, tone = 'neutral', shubh = false, language = 'hi' }) {
+function InternationalTimeCard({ now, location, language }) {
+  const dateText =
+    language === 'hi'
+      ? formatHindiDate(now)
+      : new Intl.DateTimeFormat('en-IN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }).format(now)
+
+  return (
+    <section className="international-time-card bronze-glass premium-card lift-card relative z-30 rounded-lg p-2.5 text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
+      <h2 className="mb-1 truncate font-serifHindi text-[clamp(12px,1vw,15px)] font-black text-softgold">
+        {t(language, 'अंतरराष्ट्रीय समय', 'International Time')}
+      </h2>
+      <div className="font-digital text-[clamp(19px,1.75vw,25px)] font-black leading-none text-ivory">
+        {formatClock(now)}
+      </div>
+      <div className="mt-1 truncate font-serifHindi text-[11px] text-[#FFF4D6]/78">{dateText}</div>
+      <div className="mt-0.5 truncate text-[10px] uppercase tracking-[0.12em] text-antiquegold">
+        {language === 'hi' ? location.nameHi : location.nameEn}
+      </div>
+    </section>
+  )
+}
+
+function DataRow({ label, value, tone = 'neutral', shubh = false, currentBadge = false, highlight = false, language = 'hi' }) {
   const toneClass = tone === 'good' ? 'text-softgold' : tone === 'bad' ? 'text-[#f4b469]' : 'text-ivory/90'
-  const isShubh = shubh || tone === 'good'
+  const isShubh = shubh
   return (
     <div
       className={`premium-card lift-card data-row-card rounded-md border bg-[rgba(73,45,17,0.25)] px-2.5 py-1.5 shadow-[inset_0_0_14px_rgba(0,0,0,0.28)] ${
         isShubh
           ? 'shubh-row border-l-[3px] border-l-[rgba(0,212,255,0.82)] border-y-gold/14 border-r-gold/14'
+          : highlight
+            ? 'current-muhurat-row border-l-[3px] border-l-[rgba(245,215,110,0.82)] border-y-gold/18 border-r-gold/18'
           : 'border-gold/14'
       }`}
     >
@@ -517,6 +563,11 @@ function DataRow({ label, value, tone = 'neutral', shubh = false, language = 'hi
           <span className="shubh-badge inline-flex shrink-0 items-center gap-1 rounded-full border border-[rgba(0,212,255,0.45)] bg-[rgba(0,212,255,0.1)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[#bff7ff]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#00d4ff] shadow-[0_0_8px_rgba(0,212,255,0.75)]" />
             {t(language, '\u0936\u0941\u092d', 'Shubh')}
+          </span>
+        ) : null}
+        {currentBadge ? (
+          <span className="current-badge inline-flex shrink-0 items-center gap-1 rounded-full border border-gold/45 bg-[rgba(212,175,55,0.12)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-softgold">
+            {t(language, '\u0935\u0930\u094d\u0924\u092e\u093e\u0928', 'Current')}
           </span>
         ) : null}
       </div>

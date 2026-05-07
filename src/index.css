@@ -116,6 +116,10 @@ main {
   overflow: hidden;
 }
 
+.watch-column-right {
+  align-content: center;
+}
+
 .watch-center {
   min-width: 0;
   max-height: 87vh;
@@ -231,11 +235,11 @@ select option {
 }
 
 .muhurat-center-card {
-  background: rgba(35, 24, 10, 0.38);
+  background: rgba(35, 24, 10, 0.34);
   box-shadow:
-    0 0 30px rgba(212, 175, 55, 0.15),
-    0 0 58px rgba(212, 175, 55, 0.06);
-  backdrop-filter: blur(11px);
+    0 0 26px rgba(212, 175, 55, 0.13),
+    0 0 50px rgba(212, 175, 55, 0.05);
+  backdrop-filter: blur(10px);
 }
 
 .fact-card {
@@ -327,12 +331,59 @@ select option {
   animation: shubh-badge-breathe 3.6s ease-in-out infinite;
 }
 
+.current-muhurat-row::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0.36;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0% 50%, rgba(245, 215, 110, 0.18), transparent 34%),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.1), transparent 46%);
+}
+
+.current-badge,
+.panel-mode-badge {
+  position: relative;
+}
+
+.vedic-system-panel {
+  border-color: rgba(245, 215, 110, 0.44);
+  box-shadow:
+    0 0 38px rgba(212, 175, 55, 0.2),
+    0 0 78px rgba(212, 175, 55, 0.08);
+}
+
+.traditional-system-panel {
+  margin-top: 2px;
+  border-color: rgba(212, 175, 55, 0.26);
+}
+
+.traditional-system-panel::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: -7px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.32), transparent);
+}
+
+.international-time-card {
+  border-color: rgba(212, 175, 55, 0.24);
+  background: rgba(30, 20, 10, 0.34);
+  backdrop-filter: blur(10px);
+}
+
 .fact-copy {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   min-height: 2.45em;
+  max-height: 3.75em;
 }
 
 .accuracy-footer {
@@ -821,7 +872,7 @@ select option {
 
   .fact-copy {
     min-height: 2.25em;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
   }
 
   .accuracy-footer {

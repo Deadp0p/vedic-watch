@@ -6,11 +6,17 @@ function t(language, hi, en) {
   return language === 'hi' ? hi : en
 }
 
+const invalidMuhuratDisplayNames = new Set(['\u091c\u0940\u0935'])
+
+function displayMuhuratName(name) {
+  return name && name !== '—' && !invalidMuhuratDisplayNames.has(name) ? name : '—'
+}
+
 export default function RotatingInfoPanel({ muhurat, panchang, language }) {
   const cards = [
     {
       label: t(language, 'मुहूर्त', 'Muhurat'),
-      value: muhurat.current.name,
+      value: displayMuhuratName(muhurat.current.name),
       meta: `${t(language, 'अगला मुहूर्त', 'Next Muhurat')} · ${formatCountdown(muhurat.countdownMs)}`,
       tone: muhurat.badgeType,
     },
