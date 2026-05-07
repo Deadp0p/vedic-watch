@@ -80,7 +80,6 @@ body,
 #root {
   width: 100%;
   height: 100%;
-  min-height: 100vh;
   margin: 0;
   overflow: hidden;
   background: #000;
@@ -91,7 +90,35 @@ body {
 }
 
 main {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.vedic-watch-shell {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+}
+
+.watch-grid {
+  grid-template-columns: minmax(260px, 0.9fr) minmax(470px, 1.45fr) minmax(300px, 1fr);
+  max-height: 100vh;
+}
+
+.watch-column {
+  align-content: center;
+  max-height: 88vh;
+  min-height: 0;
+}
+
+.watch-column-left,
+.watch-column-right {
+  overflow: hidden;
+}
+
+.watch-center {
+  min-width: 0;
+  max-height: 86vh;
 }
 
 button,
@@ -301,19 +328,19 @@ select option {
 
 .accuracy-footer {
   position: absolute;
-  bottom: 10px;
+  bottom: 7px;
   left: 50%;
   z-index: 30;
-  max-width: min(680px, calc(100vw - 32px));
+  max-width: min(760px, calc(100vw - 32px));
   transform: translateX(-50%);
   border: 1px solid rgba(212, 175, 55, 0.18);
   border-radius: 999px;
   background: rgba(18, 11, 4, 0.48);
-  padding: 5px 12px;
+  padding: 4px 10px;
   color: rgba(255, 244, 214, 0.62);
   font-family: var(--font-serifHindi);
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: 10px;
+  line-height: 1.15;
   text-align: center;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(12px);
@@ -737,10 +764,66 @@ select option {
   }
 }
 
+@media (max-height: 820px) and (min-width: 1025px) {
+  .watch-grid {
+    grid-template-columns: minmax(250px, 0.9fr) minmax(430px, 1.35fr) minmax(290px, 1fr);
+    gap: clamp(10px, 1.4vw, 18px);
+    padding-top: 42px;
+    padding-bottom: 30px;
+  }
+
+  .watch-face {
+    width: min(68vh, 39vw, 650px);
+    max-width: 650px;
+  }
+
+  .watch-column {
+    max-height: 87vh;
+    gap: 9px;
+  }
+
+  .side-panel,
+  .vedic-time-info,
+  .fact-card {
+    padding: 10px;
+  }
+
+  .side-panel-title {
+    margin-bottom: 7px;
+    font-size: clamp(13px, 1.1vw, 17px);
+  }
+
+  .side-panel-body {
+    gap: 5px;
+  }
+
+  .data-row-card {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .data-row-value {
+    font-size: 12.5px;
+  }
+
+  .fact-copy {
+    min-height: 2.25em;
+    -webkit-line-clamp: 2;
+  }
+
+  .accuracy-footer {
+    bottom: 5px;
+    max-width: min(840px, calc(100vw - 28px));
+    padding: 3px 9px;
+    font-size: 9px;
+    line-height: 1.12;
+  }
+}
+
 @media (max-width: 1024px) {
   main.overflow-hidden {
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: hidden;
   }
 
   .top-controls {
@@ -752,11 +835,7 @@ select option {
   }
 
   .accuracy-footer {
-    position: relative;
-    bottom: auto;
-    left: auto;
-    margin: 10px auto 14px;
-    transform: none;
+    bottom: 6px;
   }
 }
 
