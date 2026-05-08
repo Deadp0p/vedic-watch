@@ -573,7 +573,7 @@ function InternationalTimeCard({ now, location, language }) {
   return (
     <section className="international-time-card bronze-glass premium-card lift-card relative z-30 rounded-lg p-2.5 text-center [text-shadow:0_3px_10px_rgba(0,0,0,0.8)]">
       <h2 className="mb-1 truncate font-serifHindi text-[clamp(12px,1vw,15px)] font-black text-softgold">
-        {t(language, 'अंतरराष्ट्रीय समय', 'International Time')}
+        {t(language, 'भारतीय समय (IST – Indian Standard Time)', 'Indian Standard Time (IST)')}
       </h2>
       <div className="font-digital text-[clamp(19px,1.75vw,25px)] font-black leading-none text-ivory">
         {formatClock(now)}
