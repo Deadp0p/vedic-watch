@@ -308,11 +308,11 @@ function buildAnnouncement({ language, muhurat, panchang, now, vedicDayStart, co
   const timeText = formatClockTime(now)
 
   if (language === 'en') {
-    return `Current Muhurat is ${localize(muhurat.name, 'en')}. ${localize(panchang.paksha, 'en')}, ${localize(panchang.tithi, 'en')}. Vedic time: Muhurta ${vedic.number}, ${vedic.elapsedMinutes} minutes elapsed. International time is ${timeText}.`
+    return `Current Muhurat is ${localize(muhurat.name, 'en')}. ${localize(panchang.paksha, 'en')}, ${localize(panchang.tithi, 'en')}. Vedic time: Muhurta ${vedic.number}, ${vedic.elapsedMinutes} minutes elapsed. Indian Standard Time is ${timeText}.`
   }
 
   const [hour, minute] = timeText.split(':')
-  return `वर्तमान मुहूर्त ${muhurat.name} है। ${panchang.paksha}, ${panchang.tithi}। वैदिक समय ${vedic.number}वाँ मुहूर्त, ${vedic.elapsedMinutes} मिनट व्यतीत। अंतरराष्ट्रीय समय ${hour} बजकर ${minute} मिनट।`
+  return `वर्तमान मुहूर्त ${muhurat.name} है। ${panchang.paksha}, ${panchang.tithi}। वैदिक समय ${vedic.number}वाँ मुहूर्त, ${vedic.elapsedMinutes} मिनट व्यतीत। भारतीय मानक समय ${hour} बजकर ${minute} मिनट।`
 }
 
 export async function speakMuhurat({
