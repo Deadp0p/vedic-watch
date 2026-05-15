@@ -186,8 +186,9 @@ export default function VedicWatch({
         </div>
       ) : null}
 
-      <section className="watch-grid relative z-10 mx-auto grid h-full w-full max-w-[1500px] items-center gap-[clamp(24px,2vw,30px)] px-[clamp(10px,1.6vw,28px)] pt-11 pb-10 max-lg:grid-cols-1 max-lg:grid-rows-[minmax(0,1fr)_auto] max-lg:gap-3 max-lg:pt-14">
+      <section className="watch-grid relative z-10 mx-auto grid h-full w-full max-w-[1500px] items-center gap-[clamp(24px,2vw,30px)] px-[clamp(10px,1.6vw,28px)] pt-11 pb-14 max-lg:grid-cols-1 max-lg:grid-rows-[minmax(0,1fr)_auto] max-lg:gap-3 max-lg:pt-14">
         <div className="watch-column watch-column-left grid gap-3.5 max-lg:hidden">
+          <AccuracyStatus language={language} location={location} accuracyInfo={accuracyInfo} />
           <FactBox language={language} fact={fact} category={activeFact.category} />
           <SidePanel title={t(language, 'पंचांग विवरण', 'Panchang Details')} delay={0}>
             {panchangSyncing ? <SyncingPill language={language} /> : null}
@@ -203,6 +204,7 @@ export default function VedicWatch({
         <div className="watch-center relative mx-auto grid w-full place-items-center px-4">
           <WatchFace now={now} panchang={panchang} muhurat={muhurat} language={language} vedicTime={vedicTime} />
           <div className="mt-3 hidden w-[min(92vw,680px)] space-y-3 max-lg:block">
+            <AccuracyStatus language={language} location={location} accuracyInfo={accuracyInfo} compact />
             <FactBox language={language} fact={fact} category={activeFact.category} compact />
             <RotatingInfoPanel now={now} muhurat={muhurat} panchang={panchang} language={language} />
           </div>
@@ -243,7 +245,7 @@ export default function VedicWatch({
           <InternationalTimeCard now={now} location={location} language={language} />
         </div>
       </section>
-      <AccuracyFooter language={language} location={location} accuracyInfo={accuracyInfo} />
+      <LowerThirdTicker />
     </main>
   )
 }
@@ -278,9 +280,9 @@ function MethodNote({ language, type = 'vedic' }) {
   )
 }
 
-function AccuracyFooter({ language, location, accuracyInfo }) {
+function AccuracyStatus({ language, location, accuracyInfo, compact = false }) {
   return (
-    <footer className="accuracy-footer">
+    <section className={`accuracy-status ${compact ? 'accuracy-status-compact' : ''}`}>
       {accuracyInfo ? (
         <>
           <div>
@@ -303,7 +305,18 @@ function AccuracyFooter({ language, location, accuracyInfo }) {
           )}
         </div>
       )}
-    </footer>
+    </section>
+  )
+}
+
+function LowerThirdTicker() {
+  return (
+    <div className="lower-third-ticker" aria-label="Build and developed by BiznisKing">
+      <div className="ticker-track">
+        <span>Build and developed by BiznisKing</span>
+        <span aria-hidden="true">Build and developed by BiznisKing</span>
+      </div>
+    </div>
   )
 }
 

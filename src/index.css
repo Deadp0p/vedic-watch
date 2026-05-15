@@ -394,29 +394,103 @@ select option {
   max-height: 3.75em;
 }
 
-.accuracy-footer {
-  position: absolute;
-  bottom: 7px;
-  left: 50%;
+.accuracy-status {
+  position: relative;
   z-index: 30;
-  width: max-content;
-  max-width: min(980px, calc(100vw - 32px));
-  transform: translateX(-50%);
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  border-radius: 999px;
-  background: rgba(18, 11, 4, 0.48);
-  padding: 5px 12px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(44, 27, 10, 0.58), rgba(13, 8, 4, 0.58)),
+    rgba(18, 11, 4, 0.5);
+  padding: 6px 10px;
   color: rgba(255, 244, 214, 0.62);
   font-family: var(--font-serifHindi);
   font-size: 10px;
   line-height: 1.32;
-  text-align: center;
+  text-align: left;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 24px rgba(212, 175, 55, 0.12),
+    inset 0 1px 0 rgba(245, 215, 110, 0.1);
 }
 
-.accuracy-footer > div + div {
+.accuracy-status::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 212, 255, 0.08), transparent 34%);
+  opacity: 0.72;
+}
+
+.accuracy-status > div {
+  position: relative;
+  z-index: 1;
+}
+
+.accuracy-status > div + div {
   margin-top: 2px;
+}
+
+.accuracy-status-compact {
+  width: min(92vw, 680px);
+  margin: 0 auto 12px;
+  text-align: center;
+}
+
+.lower-third-ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  overflow: hidden;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+  background:
+    linear-gradient(180deg, rgba(47, 30, 11, 0.68), rgba(10, 7, 4, 0.78)),
+    rgba(18, 11, 4, 0.7);
+  box-shadow:
+    0 -10px 30px rgba(212, 175, 55, 0.12),
+    inset 0 1px 0 rgba(245, 215, 110, 0.14);
+  backdrop-filter: blur(16px);
+}
+
+.lower-third-ticker::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.48), transparent);
+  opacity: 0.75;
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  min-width: 200%;
+  gap: 0;
+  padding: 7px 0 8px;
+  color: #f5d76e;
+  font-family: var(--font-serifHindi);
+  font-size: clamp(11px, 0.95vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow:
+    0 0 12px rgba(212, 175, 55, 0.36),
+    0 2px 10px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  will-change: transform;
+  animation: ticker-left-to-right 22s linear infinite;
+}
+
+.ticker-track span {
+  min-width: 100vw;
+  padding-left: 4vw;
 }
 
 .clock-layer-shell {
@@ -687,6 +761,16 @@ select option {
   }
 }
 
+@keyframes ticker-left-to-right {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @keyframes shubh-soft-breathe {
   0%,
   100% {
@@ -874,7 +958,7 @@ select option {
     grid-template-columns: minmax(240px, 0.78fr) minmax(560px, 1.55fr) minmax(240px, 0.88fr);
     gap: clamp(20px, 1.7vw, 26px);
     padding-top: 42px;
-    padding-bottom: 30px;
+    padding-bottom: 44px;
   }
 
   .watch-face {
@@ -889,7 +973,8 @@ select option {
 
   .side-panel,
   .vedic-time-info,
-  .fact-card {
+  .fact-card,
+  .accuracy-status {
     padding: 9px;
   }
 
@@ -916,10 +1001,7 @@ select option {
     -webkit-line-clamp: 3;
   }
 
-  .accuracy-footer {
-    bottom: 5px;
-    max-width: min(840px, calc(100vw - 28px));
-    padding: 3px 9px;
+  .accuracy-status {
     font-size: 9px;
     line-height: 1.12;
   }
@@ -939,8 +1021,13 @@ select option {
     gap: 6px;
   }
 
-  .accuracy-footer {
-    bottom: 6px;
+  .watch-grid {
+    padding-bottom: 48px;
+  }
+
+  .ticker-track {
+    padding-top: 6px;
+    padding-bottom: 7px;
   }
 }
 
